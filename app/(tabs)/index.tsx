@@ -1,11 +1,21 @@
-import React, { useRef } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, FlatList, Animated, Dimensions, ScrollView } from 'react-native';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import React, { useRef } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  TouchableOpacity,
+  FlatList,
+  Animated,
+  Dimensions,
+  ScrollView,
+} from "react-native";
+import { ThemedText } from "@/components/ThemedText";
+import { ThemedView } from "@/components/ThemedView";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-const { width, height } = Dimensions.get('window');
+const { width, height } = Dimensions.get("window");
 
 interface Slide {
   id: string;
@@ -16,23 +26,24 @@ interface Slide {
 
 const slides: Slide[] = [
   {
-    id: '1',
-    image: require('@/assets/images/icon.png'),
-    title: 'Contruye tu lista de tareas domésticas',
-    description: 'Elabora tu lista de tareas y calcula su valor en puntos. Organízalas en categorías y prográmalas.',
+    id: "1",
+    image: require("@/assets/images/icon.png"),
+    title: "Contruye tu lista de tareas",
+    description: "Elabora tu lista de tareas y calcula su valor en puntos.",
   },
   {
-    id: '2',
-    // image: require('@/assets/images/whizzy-dino1.png')
-    title: 'Convierte tus tareas en un juego',
-    description: 'Gana puntos cada vez que realizas una tarea y controla el progreso de los miembros de tu equipo.',
+    id: "2",
+    image: require("@/assets/images/icon.png"),
+    title: "Convierte tus tareas en un juego",
+    description: "Gana puntos cada vez que realizas una tarea.",
   },
   {
-    id: '3',
-    // image: require('@/assets/images/whizzy-dino1.png')
-    title: 'Contruir una rutina de limpieza saludable',
-    description: 'Reparte las tareas de forma equitatiiva entre los miembros de la casa. Enfréntate a todos con una cmpetición divertida',
-  }
+    id: "3",
+    image: require("@/assets/images/icon.png"),
+    title: "Contruir una rutina de limpieza saludable",
+    description:
+      "Reparte las tareas de forma equitatiiva entre los miembros de la casa.",
+  },
 ];
 
 export default function HomeScreen() {
@@ -41,8 +52,12 @@ export default function HomeScreen() {
   const renderSlide = ({ item }: { item: Slide }) => (
     <View style={styles.slideContainer}>
       {item.image && <Image source={item.image} style={styles.image} />}
-      <ThemedText type="subtitle" style={styles.subtitle}>{item.title}</ThemedText>
-      <ThemedText type="default" style={styles.description}>{item.description}</ThemedText>
+      <ThemedText type="subtitle" style={styles.subtitle}>
+        {item.title}
+      </ThemedText>
+      <ThemedText type="default" style={styles.description}>
+        {item.description}
+      </ThemedText>
     </View>
   );
 
@@ -70,13 +85,22 @@ export default function HomeScreen() {
 
             <View style={styles.pagination}>
               {slides.map((_, index) => {
-                const inputRange = [(index - 1) * width, index * width, (index + 1) * width];
+                const inputRange = [
+                  (index - 1) * width,
+                  index * width,
+                  (index + 1) * width,
+                ];
                 const dotWidth = scrollX.interpolate({
                   inputRange,
                   outputRange: [8, 16, 8],
-                  extrapolate: 'clamp'
+                  extrapolate: "clamp",
                 });
-                return <Animated.View key={index} style={[styles.dot, { width: dotWidth }]} />;
+                return (
+                  <Animated.View
+                    key={index}
+                    style={[styles.dot, { width: dotWidth }]}
+                  />
+                );
               })}
             </View>
 
@@ -85,7 +109,8 @@ export default function HomeScreen() {
             </TouchableOpacity>
 
             <Text style={styles.footerText}>
-              ¿Ya tienes una cuenta? <Text style={styles.linkText}>Acceder</Text>
+              ¿Ya tienes una cuenta?{" "}
+              <Text style={styles.linkText}>Acceder</Text>
             </Text>
           </ThemedView>
         </ScrollView>
@@ -97,21 +122,21 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
     paddingHorizontal: 20,
   },
   title: {
     fontSize: 28,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginTop: 50,
-    color: '#333',
+    color: "#333",
   },
   highlight: {
-    color: '#FFD700',
+    color: "#FFD700",
   },
   slideContainer: {
-    width: width*0.9,
+    width: width * 0.9,
     padding: 50,
   },
   image: {
@@ -121,45 +146,45 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 8,
-    color: '#FFD700',
-    textAlign: 'center',
+    color: "#FFD700",
+    textAlign: "center",
   },
   description: {
-    textAlign: 'center',
-    color: '#666',
+    textAlign: "center",
+    color: "#666",
     marginHorizontal: 20,
-    marginBottom: 20,
+    marginBottom: 0,
   },
   pagination: {
-    flexDirection: 'row',
+    flexDirection: "row",
     marginBottom: 20,
   },
   dot: {
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#FFD700',
+    backgroundColor: "#FFD700",
     marginHorizontal: 4,
   },
   button: {
-    backgroundColor: '#FFD700',
+    backgroundColor: "#FFD700",
     paddingVertical: 12,
     paddingHorizontal: 40,
     borderRadius: 25,
     marginVertical: 20,
   },
   buttonText: {
-    color: '#FFFFFF',
-    fontWeight: 'bold',
-    textAlign: 'center',
+    color: "#FFFFFF",
+    fontWeight: "bold",
+    textAlign: "center",
   },
   footerText: {
-    color: '#666',
+    color: "#666",
     marginTop: 10,
   },
   linkText: {
-    color: '#333',
-    fontWeight: 'bold',
+    color: "#333",
+    fontWeight: "bold",
   },
 });
