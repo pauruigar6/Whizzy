@@ -1,55 +1,196 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
   StyleSheet,
+  SafeAreaView,
   TextInput,
   TouchableOpacity,
+  Image,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 
-const SignupScreen = ({ navigation }: { navigation: any }) => {
+export default function SignupScreen({ navigation }: { navigation: any }) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [agreed, setAgreed] = useState(false);
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Crear cuenta</Text>
-      <TextInput style={styles.input} placeholder="Nombre de usuario" />
-      <TextInput style={styles.input} placeholder="Correo electrónico" />
-      <TextInput
-        style={styles.input}
-        placeholder="Contraseña"
-        secureTextEntry
-      />
-      <TouchableOpacity style={styles.button}>
-        <Text style={styles.buttonText}>Registrarse</Text>
-      </TouchableOpacity>
-    </View>
+    <SafeAreaView style={styles.container}>
+      {/* Encabezado */}
+      <View style={styles.header}>
+        <Text style={styles.welcomeText}>
+          Bienvenido a <Text style={styles.brandText}>Whizzy</Text>
+        </Text>
+        <Image
+          source={require("../../assets/images/logo.png")} //
+          style={styles.decor}
+        />
+      </View>
+
+      {/* Inputs */}
+      <View style={styles.form}>
+        <TextInput
+          placeholder="Correo electrónico"
+          style={styles.input}
+          value={email}
+          onChangeText={setEmail}
+        />
+        <TextInput
+          placeholder="Contraseña"
+          secureTextEntry
+          style={styles.input}
+          value={password}
+          onChangeText={setPassword}
+        />
+        <TextInput
+          placeholder="Confirmar contraseña"
+          secureTextEntry
+          style={styles.input}
+          value={confirmPassword}
+          onChangeText={setConfirmPassword}
+        />
+
+        {/* Checkbox */}
+        <TouchableOpacity
+          style={styles.checkboxContainer}
+          onPress={() => setAgreed(!agreed)}
+        >
+          <View style={styles.checkbox}>
+            {agreed && <View style={styles.checkboxSelected} />}
+          </View>
+          <Text style={styles.checkboxText}>
+            Estoy de acuerdo con los términos y condiciones{" "}
+            <Ionicons name="book-outline" size={16} />
+          </Text>
+        </TouchableOpacity>
+
+        {/* Botón */}
+        <TouchableOpacity style={styles.signupButton}>
+          <Text style={styles.signupText}>Inscríbete</Text>
+        </TouchableOpacity>
+
+        {/* Enlace Acceder */}
+        <Text style={styles.loginLink}>
+          ¿Ya tienes una cuenta?{" "}
+          <Text
+            style={{ fontWeight: "bold" }}
+            onPress={() => navigation.navigate("Login")}
+          >
+            Acceder
+          </Text>
+        </Text>
+
+        {/* Alternativas */}
+        <View style={styles.socialContainer}>
+          <View style={styles.socialButtons}>
+            <Image
+              source={require("../../assets/images/favicon.png")}
+              style={styles.icon}
+            />
+            <Image
+              source={require("../../assets/images/favicon.png")}
+              style={styles.icon}
+            />
+          </View>
+          <Text style={styles.socialText}>Inscríbete con Google o Apple</Text>
+        </View>
+      </View>
+    </SafeAreaView>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
     backgroundColor: "white",
+    paddingHorizontal: 20,
   },
-  title: { fontSize: 24, fontWeight: "bold", marginBottom: 20 },
+  header: {
+    alignItems: "center",
+    marginTop: 100,
+  },
+  welcomeText: {
+    fontSize: 22,
+    color: "#22517d",
+    textAlign: "center",
+  },
+  brandText: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: "#22517d",
+  },
+  decor: {
+    width: 200,
+    height: 80,
+    resizeMode: "contain",
+    marginTop: 10,
+  },
+  form: {
+    marginTop: 20,
+  },
   input: {
-    width: "80%",
-    padding: 10,
-    marginVertical: 10,
-    borderWidth: 1,
-    borderRadius: 5,
-    borderColor: "#ccc",
-  },
-  button: {
-    backgroundColor: "#F5B400",
+    backgroundColor: "#ebf5fb",
     padding: 15,
     borderRadius: 10,
-    marginTop: 20,
-    width: "80%",
+    marginBottom: 15,
+  },
+  checkboxContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: "#22517d",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 10,
+  },
+  checkboxSelected: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: "#22517d",
+  },
+  checkboxText: {
+    color: "#666",
+    flex: 1,
+  },
+  signupButton: {
+    backgroundColor: "#22517d",
+    padding: 15,
+    borderRadius: 10,
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  signupText: {
+    color: "#fff",
+    fontWeight: "bold",
+  },
+  loginLink: {
+    textAlign: "center",
+    color: "#666",
+    marginBottom: 20,
+  },
+  socialContainer: {
     alignItems: "center",
   },
-  buttonText: { color: "white", fontSize: 16, fontWeight: "bold" },
+  socialButtons: {
+    flexDirection: "row",
+    gap: 20,
+    marginBottom: 10,
+  },
+  icon: {
+    width: 50,
+    height: 50,
+    resizeMode: "contain",
+  },
+  socialText: {
+    color: "#888",
+  },
 });
-
-export default SignupScreen;
