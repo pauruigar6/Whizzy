@@ -10,6 +10,9 @@ import {
   Image,
   Alert,
 } from "react-native";
+import { getAuth } from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
+import { db } from "@/firebase/firebaseConfig"; // ajusta si no usas alias
 
 const avatars = [
   require("../../assets/images/logo.png"),
@@ -28,30 +31,51 @@ const avatars = [
   require("../../assets/images/logo.png"),
   require("../../assets/images/logo.png"),
   require("../../assets/images/logo.png"),
-
-  // añade más...
 ];
 
-export default function ProfileSetupScreen() {
+export default function ProfileSetupScreen({ navigation }: { navigation: any }) {
   const [name, setName] = useState("");
   const [selectedAvatar, setSelectedAvatar] = useState<number | null>(null);
 
-  const handleValidate = () => {
-    if (!name || selectedAvatar === null) {
+  const auth = getAuth();
+  const user = auth.currentUser;
+  const userEmail = user?.email ?? "tu correo";
+
+  const handleValidate = async () => {
+    if (!name || selectedAvatar === null || !user) {
       return Alert.alert(
         "Faltan datos",
         "Debes escribir tu nombre y elegir un avatar."
       );
     }
-    // Aquí guardarías los datos en Firestore si quieres
-    Alert.alert("Perfil guardado", `¡Hola ${name}!`);
+
+    try {
+      await setDoc(doc(db, "usuarios", user.uid), {
+        uid: user.uid,
+        email: user.email,
+        nombre: name,
+        avatarIndex: selectedAvatar,
+        creadoEn: new Date(),
+      });
+
+      Alert.alert("Perfil guardado", `¡Hola ${name}!`);
+      navigation.navigate("SelectGroup"); // 👈 Redirige a la nueva screen
+    } catch (error: any) {
+      Alert.alert("Error", error.message);
+    }
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>Empezar a jugar</Text>
-      <Text style={styles.subtitle}>
-        Elige un nombre y un avatar para empezar
+      <View style={styles.header}>
+        <Text style={styles.welcomeText}>Empezar a jugar</Text>
+        <Text style={styles.brandText}>Whizzy</Text>
+      </View>
+
+      <Text style={styles.description}>
+        Has creado con éxito tu cuenta de Whizzy para{" "}
+        <Text style={styles.email}>{userEmail}</Text>.{"\t"}
+        Elige un nombre y un avatar para empezar a jugar.
       </Text>
 
       <TextInput
@@ -88,23 +112,36 @@ export default function ProfileSetupScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20, backgroundColor: "#fff" },
-  title: {
-    fontSize: 24,
+  header: { marginTop: 50 },
+  welcomeText: {
+    fontSize: 22,
+    color: "#1f618d",
+  },
+  brandText: {
+    fontSize: 28,
     fontWeight: "bold",
     color: "#1f618d",
-    marginBottom: 10,
-    marginTop: 45,
   },
-  subtitle: { fontSize: 16, color: "#555" },
+  description: {
+    fontSize: 15,
+    color: "#666",
+    marginTop: 10,
+    marginBottom: 20,
+    lineHeight: 22,
+  },
+  email: {
+    fontWeight: "bold",
+    color: "#1f618d",
+  },
   input: {
     backgroundColor: "#ebf5fb",
     borderRadius: 10,
     padding: 15,
-    marginTop: 20,
+    marginTop: 10,
   },
   avatar: {
-    width: 60,
-    height: 60,
+    width: 80,
+    height: 80,
     margin: 10,
     opacity: 0.3,
   },

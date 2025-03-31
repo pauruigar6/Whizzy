@@ -11,7 +11,8 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "@/firebase/firebaseConfig"; // cambia el import si no usas alias
+import { auth, db } from "@/firebase/firebaseConfig";
+import { doc, getDoc } from "firebase/firestore";
 
 export default function LoginScreen({ navigation }: { navigation: any }) {
   const [email, setEmail] = useState("");
@@ -23,11 +24,21 @@ export default function LoginScreen({ navigation }: { navigation: any }) {
     }
 
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      Alert.alert("¡Bienvenido!", "Sesión iniciada correctamente.");
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
 
-      navigation.navigate("ProfileSetup"); // 👈 nombre de la screen que definiste
-      
+      const userRef = doc(db, "usuarios", user.uid);
+      const userSnap = await getDoc(userRef);
+
+      const userData = userSnap.exists() ? userSnap.data() : null;
+      const hasProfile = userData?.nombre && userData?.avatarIndex !== undefined;
+
+      if (hasProfile) {
+        navigation.navigate("SelectGroup"); // ✅ ya tiene perfil
+      } else {
+        navigation.navigate("ProfileSetup"); // ✅ es nuevo
+      }
+
     } catch (error: any) {
       Alert.alert("Error", error.message);
     }
@@ -62,12 +73,10 @@ export default function LoginScreen({ navigation }: { navigation: any }) {
           onChangeText={setPassword}
         />
 
-        {/* Botón Login */}
         <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
           <Text style={styles.loginText}>Iniciar sesión</Text>
         </TouchableOpacity>
 
-        {/* Enlace Registro */}
         <Text style={styles.signupLink}>
           ¿No tienes cuenta?{" "}
           <Text
@@ -78,7 +87,6 @@ export default function LoginScreen({ navigation }: { navigation: any }) {
           </Text>
         </Text>
 
-        {/* Alternativas */}
         <View style={styles.socialContainer}>
           <View style={styles.socialButtons}>
             <Image
@@ -100,34 +108,12 @@ export default function LoginScreen({ navigation }: { navigation: any }) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "white",
-    paddingHorizontal: 20,
-  },
-  header: {
-    alignItems: "center",
-    marginTop: 100,
-  },
-  welcomeText: {
-    fontSize: 22,
-    color: "#1f618d",
-    textAlign: "center",
-  },
-  brandText: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#1f618d",
-  },
-  decor: {
-    width: 200,
-    height: 80,
-    resizeMode: "contain",
-    marginTop: 10,
-  },
-  form: {
-    marginTop: 20,
-  },
+  container: { flex: 1, backgroundColor: "white", paddingHorizontal: 20 },
+  header: { alignItems: "center", marginTop: 100 },
+  welcomeText: { fontSize: 22, color: "#1f618d", textAlign: "center" },
+  brandText: { fontSize: 28, fontWeight: "bold", color: "#1f618d" },
+  decor: { width: 200, height: 80, resizeMode: "contain", marginTop: 10 },
+  form: { marginTop: 20 },
   input: {
     backgroundColor: "#ebf5fb",
     padding: 15,
@@ -141,29 +127,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 20,
   },
-  loginText: {
-    color: "#fff",
-    fontWeight: "bold",
-  },
+  loginText: { color: "#fff", fontWeight: "bold" },
   signupLink: {
     textAlign: "center",
     color: "#666",
     marginBottom: 20,
   },
-  socialContainer: {
-    alignItems: "center",
-  },
+  socialContainer: { alignItems: "center" },
   socialButtons: {
     flexDirection: "row",
     gap: 20,
     marginBottom: 10,
   },
-  icon: {
-    width: 50,
-    height: 50,
-    resizeMode: "contain",
-  },
-  socialText: {
-    color: "#888",
-  },
+  icon: { width: 50, height: 50, resizeMode: "contain" },
+  socialText: { color: "#888" },
 });
