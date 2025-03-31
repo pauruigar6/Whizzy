@@ -7,14 +7,53 @@ import {
   TextInput,
   TouchableOpacity,
   Image,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
+import { auth, db } from "@/firebase/firebaseConfig"; // ajusta si no usas alias
 
 export default function SignupScreen({ navigation }: { navigation: any }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [agreed, setAgreed] = useState(false);
+
+  const handleSignup = async () => {
+    if (!email || !password || !confirmPassword) {
+      return Alert.alert("Error", "Completa todos los campos.");
+    }
+
+    if (password !== confirmPassword) {
+      return Alert.alert("Error", "Las contraseñas no coinciden.");
+    }
+
+    if (!agreed) {
+      return Alert.alert("Aviso", "Debes aceptar los términos.");
+    }
+
+    try {
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+      const user = userCredential.user;
+
+      // Guardar en Firestore
+      await setDoc(doc(db, "usuarios", user.uid), {
+        email: user.email,
+        uid: user.uid,
+        creadoEn: new Date(),
+      });
+
+      Alert.alert("¡Listo!", "Cuenta creada correctamente");
+      navigation.navigate("Login");
+    } catch (error: any) {
+      Alert.alert("Error", error.message);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -24,7 +63,7 @@ export default function SignupScreen({ navigation }: { navigation: any }) {
           Bienvenido a <Text style={styles.brandText}>Whizzy</Text>
         </Text>
         <Image
-          source={require("../../assets/images/logo.png")} //
+          source={require("../../assets/images/logo.png")}
           style={styles.decor}
         />
       </View>
@@ -67,7 +106,7 @@ export default function SignupScreen({ navigation }: { navigation: any }) {
         </TouchableOpacity>
 
         {/* Botón */}
-        <TouchableOpacity style={styles.signupButton}>
+        <TouchableOpacity style={styles.signupButton} onPress={handleSignup}>
           <Text style={styles.signupText}>Inscríbete</Text>
         </TouchableOpacity>
 

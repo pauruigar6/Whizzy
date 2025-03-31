@@ -7,12 +7,31 @@ import {
   TextInput,
   TouchableOpacity,
   Image,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "@/firebase/firebaseConfig"; // cambia el import si no usas alias
 
 export default function LoginScreen({ navigation }: { navigation: any }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
+  const handleLogin = async () => {
+    if (!email || !password) {
+      return Alert.alert("Error", "Por favor completa todos los campos.");
+    }
+
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      Alert.alert("¡Bienvenido!", "Sesión iniciada correctamente.");
+
+      navigation.navigate("ProfileSetup"); // 👈 nombre de la screen que definiste
+      
+    } catch (error: any) {
+      Alert.alert("Error", error.message);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -44,7 +63,7 @@ export default function LoginScreen({ navigation }: { navigation: any }) {
         />
 
         {/* Botón Login */}
-        <TouchableOpacity style={styles.loginButton}>
+        <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
           <Text style={styles.loginText}>Iniciar sesión</Text>
         </TouchableOpacity>
 
