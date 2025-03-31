@@ -112,13 +112,13 @@ const styles = StyleSheet.create({
   },
   welcomeText: {
     fontSize: 22,
-    color: "#22517d",
+    color: "#1f618d",
     textAlign: "center",
   },
   brandText: {
     fontSize: 28,
     fontWeight: "bold",
-    color: "#22517d",
+    color: "#1f618d",
   },
   slide: {
     width,
@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: "bold",
-    color: "#22517d",
+    color: "#1f618d",
     textAlign: "center",
   },
   description: {
@@ -160,14 +160,14 @@ const styles = StyleSheet.create({
     margin: 5,
   },
   activeDot: {
-    backgroundColor: "#22517d",
+    backgroundColor: "#1f618d",
   },
   buttonContainer: {
     alignItems: "center",
     paddingBottom: 30,
   },
   button: {
-    backgroundColor: "#22517d",
+    backgroundColor: "#1f618d",
     padding: 15,
     borderRadius: 10,
     width: "80%",

@@ -113,13 +113,13 @@ const styles = StyleSheet.create({
   },
   welcomeText: {
     fontSize: 22,
-    color: "#22517d",
+    color: "#1f618d",
     textAlign: "center",
   },
   brandText: {
     fontSize: 28,
     fontWeight: "bold",
-    color: "#22517d",
+    color: "#1f618d",
   },
   decor: {
     width: 200,
@@ -146,7 +146,7 @@ const styles = StyleSheet.create({
     height: 20,
     borderRadius: 10,
     borderWidth: 2,
-    borderColor: "#22517d",
+    borderColor: "#1f618d",
     alignItems: "center",
     justifyContent: "center",
     marginRight: 10,
@@ -155,14 +155,14 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: "#22517d",
+    backgroundColor: "#1f618d",
   },
   checkboxText: {
     color: "#666",
     flex: 1,
   },
   signupButton: {
-    backgroundColor: "#22517d",
+    backgroundColor: "#1f618d",
     padding: 15,
     borderRadius: 10,
     alignItems: "center",
