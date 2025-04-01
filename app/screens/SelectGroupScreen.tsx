@@ -11,39 +11,25 @@ import {
   Alert,
 } from "react-native";
 import { auth, db } from "@/firebase/firebaseConfig";
-import { addDoc, collection, doc, updateDoc, getDocs, query, where, arrayUnion } from "firebase/firestore";
+import {
+  updateDoc,
+  getDocs,
+  query,
+  where,
+  arrayUnion,
+  doc,
+  collection,
+  addDoc,
+} from "firebase/firestore";
 import { useNavigation } from "@react-navigation/native";
+import { StackNavigationProp } from "@react-navigation/stack";
+import { RootStackParamList } from "@/types/navigation"; // Ajusta si no usas alias
+
+type NavigationProp = StackNavigationProp<RootStackParamList, "SelectGroup">;
 
 export default function SelectGroupScreen() {
   const [codigo, setCodigo] = useState("");
-  const navigation = useNavigation();
-
-  const crearGrupo = async () => {
-    const usuario = auth.currentUser;
-    if (!usuario) return;
-
-    try {
-      const codigoInvitacion = Math.random().toString(36).substring(2, 8);
-
-      const grupoRef = await addDoc(collection(db, "grupos"), {
-        nombre: "Nuevo grupo",
-        creadoPor: usuario.uid,
-        miembros: [usuario.uid],
-        codigoInvitacion,
-        creadoEn: new Date(),
-      });
-
-      await updateDoc(doc(db, "usuarios", usuario.uid), {
-        grupoId: grupoRef.id,
-      });
-
-      Alert.alert("¡Grupo creado!", "Has creado un nuevo grupo.");
-    //   navigation.navigate("Home");
-
-    } catch (error: any) {
-      Alert.alert("Error al crear grupo", error.message);
-    }
-  };
+  const navigation = useNavigation<NavigationProp>();
 
   const unirseConCodigo = async () => {
     const usuario = auth.currentUser;
@@ -54,11 +40,17 @@ export default function SelectGroupScreen() {
     }
 
     try {
-      const q = query(collection(db, "grupos"), where("codigoInvitacion", "==", codigo.trim()));
+      const q = query(
+        collection(db, "grupos"),
+        where("codigoInvitacion", "==", codigo.trim())
+      );
       const snapshot = await getDocs(q);
 
       if (snapshot.empty) {
-        return Alert.alert("Código no válido", "No se encontró ningún grupo con ese código.");
+        return Alert.alert(
+          "Código no válido",
+          "No se encontró ningún grupo con ese código."
+        );
       }
 
       const grupoDoc = snapshot.docs[0];
@@ -73,10 +65,34 @@ export default function SelectGroupScreen() {
       });
 
       Alert.alert("¡Te uniste al grupo!", "Ahora puedes empezar.");
-    //   navigation.navigate("Home");
-
+      // navigation.navigate("Home");
     } catch (error: any) {
       Alert.alert("Error al unirse", error.message);
+    }
+  };
+
+  const crearGrupoEIr = async () => {
+    const usuario = auth.currentUser;
+    if (!usuario) return;
+
+    try {
+      const codigoInvitacion = Math.random().toString(36).substring(2, 8);
+
+      const nuevoGrupo = await addDoc(collection(db, "grupos"), {
+        nombre: "Nuevo grupo",
+        creadoPor: usuario.uid,
+        miembros: [usuario.uid],
+        codigoInvitacion,
+        creadoEn: new Date(),
+      });
+
+      await updateDoc(doc(db, "usuarios", usuario.uid), {
+        grupoId: nuevoGrupo.id,
+      });
+
+      navigation.navigate("CreateGroup");
+    } catch (error: any) {
+      Alert.alert("Error", error.message);
     }
   };
 
@@ -99,9 +115,10 @@ export default function SelectGroupScreen() {
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Crear un nuevo equipo</Text>
           <Text style={styles.cardText}>
-            Empieza con un nuevo equipo o casa, descubre Whizzy e invita a otros miembros.
+            Empieza con un nuevo equipo o casa, descubre Whizzy e invita a otros
+            miembros.
           </Text>
-          <TouchableOpacity style={styles.button} onPress={crearGrupo}>
+          <TouchableOpacity style={styles.button} onPress={crearGrupoEIr}>
             <Text style={styles.buttonText}>Crear un nuevo equipo</Text>
           </TouchableOpacity>
         </View>
@@ -112,7 +129,8 @@ export default function SelectGroupScreen() {
             Únase a un equipo existente con código
           </Text>
           <Text style={styles.cardText}>
-            Consigue un código de invitación de otro miembro de Whizzy. Rellena el código y únete al equipo automáticamente.
+            Consigue un código de invitación de otro miembro de Whizzy. Rellena
+            el código y únete al equipo automáticamente.
           </Text>
           <TextInput
             style={styles.input}
@@ -120,7 +138,10 @@ export default function SelectGroupScreen() {
             value={codigo}
             onChangeText={setCodigo}
           />
-          <TouchableOpacity style={[styles.button, { marginTop: 10 }]} onPress={unirseConCodigo}>
+          <TouchableOpacity
+            style={[styles.button, { marginTop: 10 }]}
+            onPress={unirseConCodigo}
+          >
             <Text style={styles.buttonText}>Unirse con código</Text>
           </TouchableOpacity>
         </View>
@@ -131,7 +152,8 @@ export default function SelectGroupScreen() {
             Únase a un equipo existente con enlace
           </Text>
           <Text style={styles.cardText}>
-            Consigue un enlace de invitación de otro miembro de Whizzy. Ábrelo o pégalo aquí para unirte.
+            Consigue un enlace de invitación de otro miembro de Whizzy. Ábrelo o
+            pégalo aquí para unirte.
           </Text>
           <TextInput style={styles.input} placeholder="Enlace de invitación" />
         </View>
