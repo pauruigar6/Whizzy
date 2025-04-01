@@ -58,8 +58,9 @@ const WelcomeScreen = ({ navigation }: { navigation: any }) => {
         {/* TÍTULO */}
         <View style={styles.header}>
           <Text style={styles.welcomeText}>
-            Bienvenido a <Text style={styles.brandText}>Whizzy</Text>
+            Bienvenido a
           </Text>
+          <Text style={styles.brandText}>Whizzy</Text>
         </View>
 
         <FlatList
@@ -102,30 +103,31 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
     justifyContent: "space-between",
   },
+  header: {
+    alignItems: "center",
+    marginTop: height * 0.15,
+    marginBottom:  height * -0.05,
+  },
   sliderContainer: {
     flex: 1,
   },
-  header: {
-    alignItems: "center",
-    marginTop: 100,
-    marginBottom: -200,
-  },
-  welcomeText: {
-    fontSize: 22,
-    color: "#1f618d",
-    textAlign: "center",
-  },
-  brandText: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#1f618d",
-  },
   slide: {
     width,
-    height,
+    height: height * 0.7,
     alignItems: "center",
     justifyContent: "center",
-    padding: 20,
+    paddingHorizontal: 20,
+  },
+  welcomeText: {
+    fontSize: 26,
+    color: "#1f618d",
+    textAlign: "center",
+    marginBottom: 5,
+  },
+  brandText: {
+    fontSize: 34,
+    fontWeight: "bold",
+    color: "#1f618d",
   },
   image: {
     width: 220,
@@ -138,19 +140,18 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#1f618d",
     textAlign: "center",
+    marginBottom: 10,
   },
   description: {
     fontSize: 16,
     textAlign: "center",
     color: "#666",
-    marginVertical: 10,
     paddingHorizontal: 20,
   },
   pagination: {
     flexDirection: "row",
     alignSelf: "center",
-    marginVertical: 70,
-
+    marginBottom: 20,
   },
   dot: {
     width: 10,
@@ -181,11 +182,8 @@ const styles = StyleSheet.create({
   },
   loginText: {
     color: "#666",
-    marginTop: 10,
   },
   accessText: {
-    color: "#666",
-    marginTop: 10,
     fontWeight: "bold",
   },
 });

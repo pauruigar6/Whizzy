@@ -33,7 +33,11 @@ const avatars = [
   require("../../assets/images/logo.png"),
 ];
 
-export default function ProfileSetupScreen({ navigation }: { navigation: any }) {
+export default function ProfileSetupScreen({
+  navigation,
+}: {
+  navigation: any;
+}) {
   const [name, setName] = useState("");
   const [selectedAvatar, setSelectedAvatar] = useState<number | null>(null);
 
@@ -57,8 +61,6 @@ export default function ProfileSetupScreen({ navigation }: { navigation: any }) 
         avatarIndex: selectedAvatar,
         creadoEn: new Date(),
       });
-
-      Alert.alert("Perfil guardado", `¡Hola ${name}!`);
       navigation.navigate("SelectGroup"); // 👈 Redirige a la nueva screen
     } catch (error: any) {
       Alert.alert("Error", error.message);

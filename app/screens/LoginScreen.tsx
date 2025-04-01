@@ -7,12 +7,15 @@ import {
   TextInput,
   TouchableOpacity,
   Image,
+  ScrollView,
+  Dimensions,
   Alert,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth, db } from "@/firebase/firebaseConfig";
 import { doc, getDoc } from "firebase/firestore";
+
+const { height } = Dimensions.get("window");
 
 export default function LoginScreen({ navigation }: { navigation: any }) {
   const [email, setEmail] = useState("");
@@ -34,9 +37,9 @@ export default function LoginScreen({ navigation }: { navigation: any }) {
       const hasProfile = userData?.nombre && userData?.avatarIndex !== undefined;
 
       if (hasProfile) {
-        navigation.navigate("SelectGroup"); // ✅ ya tiene perfil
+        navigation.navigate("SelectGroup");
       } else {
-        navigation.navigate("ProfileSetup"); // ✅ es nuevo
+        navigation.navigate("ProfileSetup");
       }
 
     } catch (error: any) {
@@ -46,74 +49,83 @@ export default function LoginScreen({ navigation }: { navigation: any }) {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Encabezado */}
-      <View style={styles.header}>
-        <Text style={styles.welcomeText}>
-          Bienvenido a <Text style={styles.brandText}>Whizzy</Text>
-        </Text>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        {/* Encabezado */}
+        <View style={styles.header}>
+          <Text style={styles.welcomeText}>Bienvenido a</Text>
+          <Text style={styles.brandText}>Whizzy</Text>
+        </View>
+
         <Image
           source={require("../../assets/images/logo.png")}
-          style={styles.decor}
-        />
-      </View>
-
-      {/* Formulario */}
-      <View style={styles.form}>
-        <TextInput
-          placeholder="Correo electrónico"
-          style={styles.input}
-          value={email}
-          onChangeText={setEmail}
-        />
-        <TextInput
-          placeholder="Contraseña"
-          secureTextEntry
-          style={styles.input}
-          value={password}
-          onChangeText={setPassword}
+          style={styles.image}
         />
 
-        <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-          <Text style={styles.loginText}>Iniciar sesión</Text>
-        </TouchableOpacity>
+        {/* Formulario */}
+        <View style={styles.form}>
+          <TextInput
+            placeholder="Correo electrónico"
+            style={styles.input}
+            value={email}
+            onChangeText={setEmail}
+          />
+          <TextInput
+            placeholder="Contraseña"
+            secureTextEntry
+            style={styles.input}
+            value={password}
+            onChangeText={setPassword}
+          />
 
-        <Text style={styles.signupLink}>
-          ¿No tienes cuenta?{" "}
-          <Text
-            style={{ fontWeight: "bold" }}
-            onPress={() => navigation.navigate("Signup")}
-          >
-            Regístrate
-          </Text>
-        </Text>
+          <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
+            <Text style={styles.loginText}>Iniciar sesión</Text>
+          </TouchableOpacity>
 
-        <View style={styles.socialContainer}>
-          <View style={styles.socialButtons}>
-            <Image
-              source={require("../../assets/images/favicon.png")}
-              style={styles.icon}
-            />
-            <Image
-              source={require("../../assets/images/favicon.png")}
-              style={styles.icon}
-            />
-          </View>
-          <Text style={styles.socialText}>
-            Inicia sesión con Google o Apple
+          <Text style={styles.signupLink}>
+            ¿No tienes cuenta?{" "}
+            <Text style={{ fontWeight: "bold" }} onPress={() => navigation.navigate("Signup")}>
+              Regístrate
+            </Text>
           </Text>
         </View>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "white", paddingHorizontal: 20 },
-  header: { alignItems: "center", marginTop: 100 },
-  welcomeText: { fontSize: 22, color: "#1f618d", textAlign: "center" },
-  brandText: { fontSize: 28, fontWeight: "bold", color: "#1f618d" },
-  decor: { width: 200, height: 80, resizeMode: "contain", marginTop: 10 },
-  form: { marginTop: 20 },
+  container: {
+    flex: 1,
+    backgroundColor: "white",
+  },
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingBottom: 30,
+    minHeight: height,
+    justifyContent: "flex-start",
+  },
+  header: {
+    marginTop: height * 0.06,
+    marginBottom: height * 0.006,
+  },
+  welcomeText: {
+    fontSize: 22,
+    color: "#1f618d",
+  },
+  brandText: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: "#1f618d",
+  },
+  image: {
+    width: "100%",
+    height: 150,
+    resizeMode: "contain",
+    marginVertical: 20,
+  },
+  form: {
+    marginTop: 10,
+  },
   input: {
     backgroundColor: "#ebf5fb",
     padding: 15,
@@ -127,18 +139,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 20,
   },
-  loginText: { color: "#fff", fontWeight: "bold" },
+  loginText: {
+    color: "#fff",
+    fontWeight: "bold",
+  },
   signupLink: {
     textAlign: "center",
     color: "#666",
     marginBottom: 20,
   },
-  socialContainer: { alignItems: "center" },
-  socialButtons: {
-    flexDirection: "row",
-    gap: 20,
-    marginBottom: 10,
-  },
-  icon: { width: 50, height: 50, resizeMode: "contain" },
-  socialText: { color: "#888" },
+
 });
