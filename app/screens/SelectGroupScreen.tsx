@@ -171,7 +171,7 @@ export default function SelectGroupScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
+      
         <View style={styles.header}>
           <Text style={styles.welcomeText}>Bienvenido a</Text>
           <Text style={styles.brandText}>Whizzy</Text>
@@ -179,7 +179,7 @@ export default function SelectGroupScreen() {
             <Image source={avatarImages[avatarIndex]} style={styles.avatarTopRight} />
           )}
         </View>
-
+        <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Crear un nuevo equipo</Text>
           <Text style={styles.cardText}>
@@ -250,6 +250,8 @@ const styles = StyleSheet.create({
     justifyContent: "flex-start",
   },
   header: {
+    paddingHorizontal: 20,
+    paddingBottom: 30,
     marginTop: height * 0.06,
     marginBottom: height * 0.06,
     position: "relative",

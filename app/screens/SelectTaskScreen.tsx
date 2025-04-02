@@ -9,6 +9,7 @@ import {
   SectionList,
   Dimensions,
   FlatList,
+  ScrollView,
 } from "react-native";
 import { auth, db } from "@/firebase/firebaseConfig";
 import {
@@ -125,7 +126,6 @@ export default function TaskSelectScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.scrollContainer}>
         <View style={styles.header}>
           <Text style={styles.welcomeText}>Bienvenido a</Text>
           <Text style={styles.brandText}>Whizzy</Text>
@@ -134,124 +134,140 @@ export default function TaskSelectScreen({ navigation }) {
           )}
         </View>
 
-        <View style={styles.card}>
-          <Text style={styles.title}>Escoge algunas tareas de la siguiente lista para empezar.</Text>
-          <Text style={styles.description}>
-            No te preocupes, podrás añadir nuevas tareas o actualizarlas en cualquier momento en tu equipo.
-          </Text>
+        <ScrollView contentContainerStyle={styles.scrollContainer}>
+          <View style={styles.card}>
+            <Text style={styles.title}>Escoge algunas tareas de la siguiente lista para empezar.</Text>
+            <Text style={styles.description}>
+              No te preocupes, podrás añadir nuevas tareas o actualizarlas en cualquier momento en tu equipo.
+            </Text>
 
-          <View style={styles.tabContainer}>
-            <TouchableOpacity
-              style={[styles.tab, mode === "simple" && styles.tabSelected]}
-              onPress={() => setMode("simple")}
-            >
-              <Text style={mode === "simple" ? styles.tabTextSelected : styles.tabText}>Simple</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.tab, mode === "detailed" && styles.tabSelected]}
-              onPress={() => setMode("detailed")}
-            >
-              <Text style={mode === "detailed" ? styles.tabTextSelected : styles.tabText}>Detallado</Text>
-            </TouchableOpacity>
-          </View>
+            <View style={styles.tabContainer}>
+              <TouchableOpacity
+                style={[styles.tab, mode === "simple" && styles.tabSelected]}
+                onPress={() => setMode("simple")}
+              >
+                <Text style={mode === "simple" ? styles.tabTextSelected : styles.tabText}>Simple</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.tab, mode === "detailed" && styles.tabSelected]}
+                onPress={() => setMode("detailed")}
+              >
+                <Text style={mode === "detailed" ? styles.tabTextSelected : styles.tabText}>Detallado</Text>
+              </TouchableOpacity>
+            </View>
 
-          <View style={styles.taskList}>
-            {mode === "simple" ? (
-              <SectionList
-                sections={simpleSections}
-                keyExtractor={(item) => item.id}
-                stickySectionHeadersEnabled={false}
-                showsVerticalScrollIndicator={false}
-                renderSectionHeader={({ section: { title } }) => (
-                  <Text style={styles.sectionHeader}>{title}</Text>
-                )}
-                renderItem={({ item }) => (
-                  <TouchableOpacity
-                    style={styles.taskItem}
-                    onPress={() => toggleTask(item.id)}
-                  >
-                    <View style={styles.circle}>
-                      {selectedTasks.includes(item.id) && <View style={styles.filledCircle} />}
-                    </View>
-                    <Text style={styles.taskText}>{item.title}</Text>
-                    <View
-                      style={[
-                        styles.pointsContainer,
-                        selectedTasks.includes(item.id) && styles.pointsContainerSelected,
-                      ]}
+            <View style={styles.taskList}>
+              {mode === "simple" ? (
+                <SectionList
+                  sections={simpleSections}
+                  keyExtractor={(item) => item.id}
+                  stickySectionHeadersEnabled={false}
+                  showsVerticalScrollIndicator={false}
+                  scrollEnabled={false}
+                  renderSectionHeader={({ section: { title } }) => (
+                    <Text style={styles.sectionHeader}>{title}</Text>
+                  )}
+                  renderItem={({ item }) => (
+                    <TouchableOpacity
+                      style={styles.taskItem}
+                      onPress={() => toggleTask(item.id)}
                     >
-                      <Text
+                      <View style={styles.circle}>
+                        {selectedTasks.includes(item.id) && <View style={styles.filledCircle} />}
+                      </View>
+                      <Text style={styles.taskText}>{item.title}</Text>
+                      <View
                         style={[
-                          styles.points,
-                          selectedTasks.includes(item.id) && styles.pointsSelected,
+                          styles.pointsContainer,
+                          selectedTasks.includes(item.id) && styles.pointsContainerSelected,
                         ]}
                       >
-                        {item.points} puntos
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-                )}
-              />
-            ) : (
-              <FlatList
-                data={detailedTasks}
-                keyExtractor={(item) => item.id}
-                showsVerticalScrollIndicator={false}
-                renderItem={({ item }) => (
-                  <TouchableOpacity
-                    style={styles.taskItem}
-                    onPress={() => toggleTask(item.id)}
-                  >
-                    <View style={styles.circle}>
-                      {selectedTasks.includes(item.id) && <View style={styles.filledCircle} />}
-                    </View>
-                    <Text style={styles.taskText}>{item.title}</Text>
-                    <View
-                      style={[
-                        styles.pointsContainer,
-                        selectedTasks.includes(item.id) && styles.pointsContainerSelected,
-                      ]}
+                        <Text
+                          style={[
+                            styles.points,
+                            selectedTasks.includes(item.id) && styles.pointsSelected,
+                          ]}
+                        >
+                          {item.points} puntos
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  )}
+                />
+              ) : (
+                <FlatList
+                  data={detailedTasks}
+                  keyExtractor={(item) => item.id}
+                  showsVerticalScrollIndicator={false}
+                  scrollEnabled={false}
+                  renderItem={({ item }) => (
+                    <TouchableOpacity
+                      style={styles.taskItem}
+                      onPress={() => toggleTask(item.id)}
                     >
-                      <Text
+                      <View style={styles.circle}>
+                        {selectedTasks.includes(item.id) && <View style={styles.filledCircle} />}
+                      </View>
+                      <Text style={styles.taskText}>{item.title}</Text>
+                      <View
                         style={[
-                          styles.points,
-                          selectedTasks.includes(item.id) && styles.pointsSelected,
+                          styles.pointsContainer,
+                          selectedTasks.includes(item.id) && styles.pointsContainerSelected,
                         ]}
                       >
-                        {item.points} puntos
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-                )}
-              />
-            )}
+                        <Text
+                          style={[
+                            styles.points,
+                            selectedTasks.includes(item.id) && styles.pointsSelected,
+                          ]}
+                        >
+                          {item.points} puntos
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  )}
+                />
+              )}
+            </View>
+
+            {!!error && <Text style={{ color: "red", textAlign: "center" }}>{error}</Text>}
+
+            <TouchableOpacity style={styles.button} onPress={handleSubmit}>
+              <Text style={styles.buttonText}>Siguiente</Text>
+            </TouchableOpacity>
           </View>
-
-          {!!error && <Text style={{ color: "red", textAlign: "center" }}>{error}</Text>}
-
-          <TouchableOpacity style={styles.button} onPress={handleSubmit}>
-            <Text style={styles.buttonText}>Siguiente</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+        </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "white" },
+  container: {
+    flex: 1,
+    backgroundColor: "white",
+  },
   scrollContainer: {
     paddingHorizontal: 20,
     paddingBottom: 30,
     minHeight: height,
+    justifyContent: "flex-start",
   },
   header: {
+    paddingHorizontal: 20,
+    paddingBottom: 30,
     marginTop: height * 0.06,
     marginBottom: height * 0.06,
     position: "relative",
   },
-  welcomeText: { fontSize: 22, color: "#1f618d" },
-  brandText: { fontSize: 28, fontWeight: "bold", color: "#1f618d" },
+  welcomeText: {
+    fontSize: 22,
+    color: "#1f618d",
+  },
+  brandText: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: "#1f618d",
+  },
   avatarTopRight: {
     position: "absolute",
     right: 0,
@@ -267,7 +283,6 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderColor: "#eee",
     paddingVertical: 20,
-    flex: 1,
   },
   title: {
     fontSize: 20,
@@ -296,7 +311,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#f9f9f9",
     borderRadius: 10,
     marginBottom: 20,
-    height: height * 0.4,
   },
   sectionHeader: {
     fontSize: 16,
