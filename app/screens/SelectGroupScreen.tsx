@@ -39,8 +39,10 @@ type NavigationProp = StackNavigationProp<RootStackParamList, "SelectGroup">;
 
 export default function SelectGroupScreen() {
   const [codigo, setCodigo] = useState("");
-  const [codigoError, setCodigoError] = useState(""); // ✅ error de código
+  const [codigoError, setCodigoError] = useState("");
   const [avatarIndex, setAvatarIndex] = useState<number | null>(null);
+  const [userGroups, setUserGroups] = useState<any[]>([]);
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const navigation = useNavigation<NavigationProp>();
 
   useEffect(() => {
@@ -58,11 +60,26 @@ export default function SelectGroupScreen() {
       }
     };
 
+    const fetchUserGroups = async () => {
+      const user = auth.currentUser;
+      if (!user) return;
+
+      try {
+        const q = query(collection(db, "grupos"), where("miembros", "array-contains", user.uid));
+        const snapshot = await getDocs(q);
+        const grupos = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+        setUserGroups(grupos);
+      } catch (error) {
+        console.error("Error al obtener grupos del usuario:", error);
+      }
+    };
+
     fetchAvatar();
+    fetchUserGroups();
   }, []);
 
   const unirseConCodigo = async () => {
-    setCodigoError(""); // limpiar errores previos
+    setCodigoError("");
     const usuario = auth.currentUser;
     if (!usuario) return;
 
@@ -169,6 +186,26 @@ export default function SelectGroupScreen() {
             <Text style={styles.buttonText}>Unirse con código</Text>
           </TouchableOpacity>
         </View>
+
+        {userGroups.length > 0 && (
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Seleccionar grupo</Text>
+            <Text style={styles.cardText}>Selecciona uno de tus grupos existentes:</Text>
+            {userGroups.map((grupo) => (
+              <TouchableOpacity
+                key={grupo.id}
+                style={[
+                  styles.groupOption,
+                  selectedGroupId === grupo.id && styles.groupOptionSelected,
+                ]}
+                onPress={() => setSelectedGroupId(grupo.id)}
+              >
+                <Text style={styles.groupText}>{grupo.nombre}</Text>
+                <Text style={styles.groupCode}>Código: {grupo.codigoInvitacion}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -251,5 +288,25 @@ const styles = StyleSheet.create({
   buttonText: {
     color: "#fff",
     fontWeight: "bold",
+  },
+  groupOption: {
+    backgroundColor: "#ebf5fb",
+    borderRadius: 10,
+    padding: 10,
+    marginVertical: 6,
+  },
+  groupOptionSelected: {
+    backgroundColor: "#d6eaf8",
+    borderColor: "#1f618d",
+    borderWidth: 2,
+  },
+  groupText: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#1f618d",
+  },
+  groupCode: {
+    fontSize: 14,
+    color: "#555",
   },
 });

@@ -3,9 +3,9 @@ export type RootStackParamList = {
     Login: undefined;
     Signup: undefined;
     ProfileSetup: undefined;
-    Home: undefined;
     SelectGroup: undefined;
     CreateGroup: undefined;
     SelectTask: undefined;
+    Home: undefined
   };
   

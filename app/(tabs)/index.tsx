@@ -10,6 +10,7 @@ import ProfileSetupScreen from "../screens/ProfileSetupScreen";
 import SelectGroupScreen from "../screens/SelectGroupScreen";
 import CreateGroupScreen from "../screens/CreateGroupScreen";
 import SelectTaskScreen from "../screens/SelectTaskScreen";
+import HomeScreen from "../screens/HomeScreen";
 
 const Stack = createStackNavigator<RootStackParamList>(); // 👈 tipado correcto
 
@@ -27,6 +28,7 @@ const Tabs = () => {
       <Stack.Screen name="SelectGroup" component={SelectGroupScreen} />
       <Stack.Screen name="CreateGroup" component={CreateGroupScreen} />
       <Stack.Screen name="SelectTask" component={SelectTaskScreen} />
+      <Stack.Screen name="Home" component={HomeScreen} />
     </Stack.Navigator>
   );
 };

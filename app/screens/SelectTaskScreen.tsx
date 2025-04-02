@@ -14,13 +14,13 @@ import { auth, db } from "@/firebase/firebaseConfig";
 import {
   doc,
   getDoc,
-  updateDoc,
   collection,
   addDoc,
+  updateDoc,
   arrayUnion,
 } from "firebase/firestore";
 
-const { width, height } = Dimensions.get("window");
+const { height } = Dimensions.get("window");
 
 const simpleSections = [
   {
@@ -33,20 +33,11 @@ const simpleSections = [
       { id: "5", title: "Preparar una comida", points: 35 },
     ],
   },
-  {
-    title: "Habitación",
-    data: [{ id: "6", title: "Doblar y guardar", points: 15 }],
-  },
+  { title: "Habitación", data: [{ id: "6", title: "Doblar y guardar", points: 15 }] },
   { title: "Salón", data: [{ id: "7", title: "Quitar la mesa", points: 10 }] },
-  {
-    title: "Baño",
-    data: [{ id: "8", title: "Recoger lavavajillas", points: 15 }],
-  },
+  { title: "Baño", data: [{ id: "8", title: "Recoger lavavajillas", points: 15 }] },
   { title: "Pasillo", data: [{ id: "9", title: "Barrido", points: 10 }] },
-  {
-    title: "Terraza",
-    data: [{ id: "10", title: "Regar plantas", points: 20 }],
-  },
+  { title: "Terraza", data: [{ id: "10", title: "Regar plantas", points: 20 }] },
 ];
 
 const detailedTasks = [
@@ -108,26 +99,32 @@ export default function TaskSelectScreen({ navigation }) {
       const userRef = doc(db, "usuarios", user.uid);
       const userSnap = await getDoc(userRef);
       if (!userSnap.exists()) return;
-      const grupoId = userSnap.data().grupoId;
-
-      if (!grupoId) return;
 
       const allTasks = [
         ...simpleSections.flatMap((s) => s.data),
         ...detailedTasks,
       ];
-      const selected = allTasks.filter((task) =>
-        selectedTasks.includes(task.id)
-      );
+      const selected = allTasks.filter((task) => selectedTasks.includes(task.id));
 
-      await updateDoc(doc(db, "grupos", grupoId), {
+      const groupCode = Math.random().toString(36).substring(2, 8);
+
+      const newGroup = await addDoc(collection(db, "grupos"), {
+        nombre: userSnap.data().nombreGrupo || "Nuevo grupo",
+        creadoPor: user.uid,
+        miembros: [user.uid],
         tareas: selected,
-        codigoInvitacion: Math.random().toString(36).substring(2, 8),
+        inicioSemana: userSnap.data().inicioSemana || "Lunes",
+        codigoInvitacion: groupCode,
+        creadoEn: new Date(),
+      });
+
+      await updateDoc(userRef, {
+        grupoId: newGroup.id,
       });
 
       navigation.navigate("Home");
     } catch (error) {
-      console.error("Error guardando tareas:", error);
+      console.error("Error al crear grupo y guardar tareas:", error);
     }
   };
 
@@ -138,20 +135,14 @@ export default function TaskSelectScreen({ navigation }) {
           <Text style={styles.welcomeText}>Bienvenido a</Text>
           <Text style={styles.brandText}>Whizzy</Text>
           {avatarIndex !== null && (
-            <Image
-              source={avatarImages[avatarIndex]}
-              style={styles.avatarTopRight}
-            />
+            <Image source={avatarImages[avatarIndex]} style={styles.avatarTopRight} />
           )}
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.title}>
-            Escoge algunas tareas de la siguiente lista para empezar.
-          </Text>
+          <Text style={styles.title}>Escoge algunas tareas de la siguiente lista para empezar.</Text>
           <Text style={styles.description}>
-            No te preocupes, podrás añadir nuevas tareas o actualizarlas en
-            cualquier momento en tu equipo.
+            No te preocupes, podrás añadir nuevas tareas o actualizarlas en cualquier momento en tu equipo.
           </Text>
 
           <View style={styles.tabContainer}>
@@ -159,25 +150,13 @@ export default function TaskSelectScreen({ navigation }) {
               style={[styles.tab, mode === "simple" && styles.tabSelected]}
               onPress={() => setMode("simple")}
             >
-              <Text
-                style={
-                  mode === "simple" ? styles.tabTextSelected : styles.tabText
-                }
-              >
-                Simple
-              </Text>
+              <Text style={mode === "simple" ? styles.tabTextSelected : styles.tabText}>Simple</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.tab, mode === "detailed" && styles.tabSelected]}
               onPress={() => setMode("detailed")}
             >
-              <Text
-                style={
-                  mode === "detailed" ? styles.tabTextSelected : styles.tabText
-                }
-              >
-                Detallado
-              </Text>
+              <Text style={mode === "detailed" ? styles.tabTextSelected : styles.tabText}>Detallado</Text>
             </TouchableOpacity>
           </View>
 
@@ -197,23 +176,19 @@ export default function TaskSelectScreen({ navigation }) {
                     onPress={() => toggleTask(item.id)}
                   >
                     <View style={styles.circle}>
-                      {selectedTasks.includes(item.id) && (
-                        <View style={styles.filledCircle} />
-                      )}
+                      {selectedTasks.includes(item.id) && <View style={styles.filledCircle} />}
                     </View>
                     <Text style={styles.taskText}>{item.title}</Text>
                     <View
                       style={[
                         styles.pointsContainer,
-                        selectedTasks.includes(item.id) &&
-                          styles.pointsContainerSelected,
+                        selectedTasks.includes(item.id) && styles.pointsContainerSelected,
                       ]}
                     >
                       <Text
                         style={[
                           styles.points,
-                          selectedTasks.includes(item.id) &&
-                            styles.pointsSelected,
+                          selectedTasks.includes(item.id) && styles.pointsSelected,
                         ]}
                       >
                         {item.points} puntos
@@ -233,23 +208,19 @@ export default function TaskSelectScreen({ navigation }) {
                     onPress={() => toggleTask(item.id)}
                   >
                     <View style={styles.circle}>
-                      {selectedTasks.includes(item.id) && (
-                        <View style={styles.filledCircle} />
-                      )}
+                      {selectedTasks.includes(item.id) && <View style={styles.filledCircle} />}
                     </View>
                     <Text style={styles.taskText}>{item.title}</Text>
                     <View
                       style={[
                         styles.pointsContainer,
-                        selectedTasks.includes(item.id) &&
-                          styles.pointsContainerSelected,
+                        selectedTasks.includes(item.id) && styles.pointsContainerSelected,
                       ]}
                     >
                       <Text
                         style={[
                           styles.points,
-                          selectedTasks.includes(item.id) &&
-                            styles.pointsSelected,
+                          selectedTasks.includes(item.id) && styles.pointsSelected,
                         ]}
                       >
                         {item.points} puntos
@@ -261,11 +232,7 @@ export default function TaskSelectScreen({ navigation }) {
             )}
           </View>
 
-          {!!error && (
-            <Text style={{ color: "red", textAlign: "center", marginTop: 10 }}>
-              {error}
-            </Text>
-          )}
+          {!!error && <Text style={{ color: "red", textAlign: "center" }}>{error}</Text>}
 
           <TouchableOpacity style={styles.button} onPress={handleSubmit}>
             <Text style={styles.buttonText}>Siguiente</Text>

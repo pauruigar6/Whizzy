@@ -9,6 +9,7 @@ import {
   Alert,
   ScrollView,
   Dimensions,
+  TextInput,
 } from "react-native";
 import { auth, db } from "@/firebase/firebaseConfig";
 import { doc, updateDoc, getDoc } from "firebase/firestore";
@@ -32,8 +33,11 @@ const avatarImages = [
 ];
 
 export default function CreateGroupScreen({ navigation }: { navigation: any }) {
-  const [selectedDay, setSelectedDay] = useState<string>("lunes");
-  const [avatarIndex, setAvatarIndex] = useState<number | null>(null); // ✅ Nuevo estado
+  const [selectedDay, setSelectedDay] = useState<string>("");
+  const [avatarIndex, setAvatarIndex] = useState<number | null>(null);
+  const [groupName, setGroupName] = useState<string>("");
+  const [groupNameError, setGroupNameError] = useState<string>("");
+  const [dayError, setDayError] = useState<string>("");
 
   useEffect(() => {
     const fetchAvatar = async () => {
@@ -49,7 +53,6 @@ export default function CreateGroupScreen({ navigation }: { navigation: any }) {
         console.error("Error al obtener avatar del usuario:", error);
       }
     };
-
     fetchAvatar();
   }, []);
 
@@ -57,27 +60,37 @@ export default function CreateGroupScreen({ navigation }: { navigation: any }) {
     const user = auth.currentUser;
     if (!user) return;
 
+    let hasError = false;
+
+    if (!groupName.trim()) {
+      setGroupNameError("El nombre del grupo es obligatorio.");
+      hasError = true;
+    }
+
+    if (!selectedDay) {
+      setDayError("Debes seleccionar un día de la semana.");
+      hasError = true;
+    }
+
+    if (hasError) return;
+
     try {
       const usuarioRef = doc(db, "usuarios", user.uid);
       const usuarioSnap = await getDoc(usuarioRef);
-
-      if (!usuarioSnap.exists()) {
-        return Alert.alert("Error", "No se encontró el usuario.");
-      }
+      if (!usuarioSnap.exists()) return;
 
       const grupoId = usuarioSnap.data().grupoId;
-      if (!grupoId) {
-        return Alert.alert("Error", "No estás en un grupo.");
-      }
+      if (!grupoId) return;
 
       const grupoRef = doc(db, "grupos", grupoId);
       await updateDoc(grupoRef, {
         inicioSemana: selectedDay,
+        nombre: groupName.trim(),
       });
 
       navigation.navigate("SelectTask");
     } catch (error: any) {
-      Alert.alert("Error", error.message);
+      console.error("Error:", error.message);
     }
   };
 
@@ -91,39 +104,57 @@ export default function CreateGroupScreen({ navigation }: { navigation: any }) {
             <Image source={avatarImages[avatarIndex]} style={styles.avatarTopRight} />
           )}
         </View>
- <View style={styles.card}>
-        <Text style={styles.title}>Elija el día de inicio de la competición</Text>
-        <Text style={styles.description}>
-          Una vez finalizada la semana, las tareas de la semana anterior ya no se pueden editar.
-        </Text>
-        <Text style={styles.note}>
-          No te preocupes, podrás cambiar este día más adelante en los ajustes
-        </Text>
 
-        <View style={styles.dayList}>
-          {diasSemana.map((dia) => (
-            <TouchableOpacity
-              key={dia}
-              style={styles.dayItem}
-              onPress={() => setSelectedDay(dia)}
-            >
-              <View style={styles.circle}>
-                {selectedDay === dia && <View style={styles.filledCircle} />}
-              </View>
-              <Text style={styles.dayText}>{dia}</Text>
-            </TouchableOpacity>
-          ))}
+        <View style={styles.card}>
+          <Text style={styles.title}>Nombre del grupo</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Introduce el nombre del grupo"
+            value={groupName}
+            onChangeText={(text) => {
+              setGroupName(text);
+              setGroupNameError("");
+            }}
+          />
+          {groupNameError ? <Text style={styles.errorText}>{groupNameError}</Text> : null}
         </View>
 
-        <TouchableOpacity style={styles.button} onPress={handleSaveDay}>
-          <Text style={styles.buttonText}>Siguiente</Text>
-        </TouchableOpacity>
+        <View style={styles.card}>
+          <Text style={styles.title}>Elija el día de inicio de la competición</Text>
+          <Text style={styles.description}>
+            Una vez finalizada la semana, las tareas de la semana anterior ya no se pueden editar.
+          </Text>
+          <Text style={styles.note}>
+            No te preocupes, podrás cambiar este día más adelante en los ajustes
+          </Text>
+
+          <View style={styles.dayList}>
+            {diasSemana.map((dia) => (
+              <TouchableOpacity
+                key={dia}
+                style={styles.dayItem}
+                onPress={() => {
+                  setSelectedDay(dia);
+                  setDayError("");
+                }}
+              >
+                <View style={styles.circle}>
+                  {selectedDay === dia && <View style={styles.filledCircle} />}
+                </View>
+                <Text style={styles.dayText}>{dia}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          {dayError ? <Text style={styles.errorText}>{dayError}</Text> : null}
+
+          <TouchableOpacity style={styles.button} onPress={handleSaveDay}>
+            <Text style={styles.buttonText}>Siguiente</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -184,6 +215,19 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
     textAlign: "center",
     marginBottom: 15,
+  },
+  input: {
+    backgroundColor: "#ebf5fb",
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 10,
+
+  },
+  errorText: {
+    color: "red",
+    fontSize: 12,
+    marginBottom: 10,
+    marginLeft: 10,
   },
   dayList: {
     backgroundColor: "#f9f9f9",
