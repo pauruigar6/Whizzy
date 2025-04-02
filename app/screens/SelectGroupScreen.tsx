@@ -21,6 +21,7 @@ import {
   doc,
   collection,
   addDoc,
+  deleteDoc,
 } from "firebase/firestore";
 import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
@@ -67,8 +68,20 @@ export default function SelectGroupScreen() {
       try {
         const q = query(collection(db, "grupos"), where("miembros", "array-contains", user.uid));
         const snapshot = await getDocs(q);
-        const grupos = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-        setUserGroups(grupos);
+
+        const gruposValidos = [];
+
+        for (const grupoDoc of snapshot.docs) {
+          const data = grupoDoc.data();
+
+          if (!data.nombre || !data.inicioSemana || !Array.isArray(data.tareas) || data.tareas.length === 0) {
+            await deleteDoc(doc(db, "grupos", grupoDoc.id));
+          } else {
+            gruposValidos.push({ id: grupoDoc.id, ...data });
+          }
+        }
+
+        setUserGroups(gruposValidos);
       } catch (error) {
         console.error("Error al obtener grupos del usuario:", error);
       }
@@ -111,7 +124,7 @@ export default function SelectGroupScreen() {
         miembros: arrayUnion(usuario.uid),
       });
 
-      // navigation.navigate("Home");
+      navigation.navigate("Home");
     } catch (error: any) {
       setCodigoError("Error al unirse al grupo.");
     }
@@ -139,6 +152,20 @@ export default function SelectGroupScreen() {
       navigation.navigate("CreateGroup");
     } catch (error: any) {
       console.error("Error al crear grupo:", error.message);
+    }
+  };
+
+  const seleccionarGrupoExistente = async (grupoId: string) => {
+    const usuario = auth.currentUser;
+    if (!usuario) return;
+
+    try {
+      await updateDoc(doc(db, "usuarios", usuario.uid), {
+        grupoId,
+      });
+      navigation.navigate("Home");
+    } catch (error) {
+      console.error("Error al seleccionar grupo existente:", error);
     }
   };
 
@@ -198,7 +225,7 @@ export default function SelectGroupScreen() {
                   styles.groupOption,
                   selectedGroupId === grupo.id && styles.groupOptionSelected,
                 ]}
-                onPress={() => setSelectedGroupId(grupo.id)}
+                onPress={() => seleccionarGrupoExistente(grupo.id)}
               >
                 <Text style={styles.groupText}>{grupo.nombre}</Text>
                 <Text style={styles.groupCode}>Código: {grupo.codigoInvitacion}</Text>

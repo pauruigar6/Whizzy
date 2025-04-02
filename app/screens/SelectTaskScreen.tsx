@@ -14,10 +14,7 @@ import { auth, db } from "@/firebase/firebaseConfig";
 import {
   doc,
   getDoc,
-  collection,
-  addDoc,
   updateDoc,
-  arrayUnion,
 } from "firebase/firestore";
 
 const { height } = Dimensions.get("window");
@@ -100,31 +97,22 @@ export default function TaskSelectScreen({ navigation }) {
       const userSnap = await getDoc(userRef);
       if (!userSnap.exists()) return;
 
+      const grupoId = userSnap.data().grupoId;
+      if (!grupoId) return;
+
       const allTasks = [
         ...simpleSections.flatMap((s) => s.data),
         ...detailedTasks,
       ];
       const selected = allTasks.filter((task) => selectedTasks.includes(task.id));
 
-      const groupCode = Math.random().toString(36).substring(2, 8);
-
-      const newGroup = await addDoc(collection(db, "grupos"), {
-        nombre: userSnap.data().nombreGrupo || "Nuevo grupo",
-        creadoPor: user.uid,
-        miembros: [user.uid],
+      await updateDoc(doc(db, "grupos", grupoId), {
         tareas: selected,
-        inicioSemana: userSnap.data().inicioSemana || "Lunes",
-        codigoInvitacion: groupCode,
-        creadoEn: new Date(),
-      });
-
-      await updateDoc(userRef, {
-        grupoId: newGroup.id,
       });
 
       navigation.navigate("Home");
     } catch (error) {
-      console.error("Error al crear grupo y guardar tareas:", error);
+      console.error("Error actualizando grupo con tareas:", error);
     }
   };
 
