@@ -100,13 +100,20 @@ export default function TaskSelectScreen({ navigation }) {
       const grupoId = userSnap.data().grupoId;
       if (!grupoId) return;
 
+      const grupoRef = doc(db, "grupos", grupoId);
+      const grupoSnap = await getDoc(grupoRef);
+      if (!grupoSnap.exists()) return;
+
+      const inicioSemana = grupoSnap.data().inicioSemana;
       const allTasks = [
         ...simpleSections.flatMap((s) => s.data),
         ...detailedTasks,
       ];
-      const selected = allTasks.filter((task) => selectedTasks.includes(task.id));
+      const selected = allTasks
+        .filter((task) => selectedTasks.includes(task.id))
+        .map((task) => ({ ...task, dia: inicioSemana }));
 
-      await updateDoc(doc(db, "grupos", grupoId), {
+      await updateDoc(grupoRef, {
         tareas: selected,
       });
 

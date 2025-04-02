@@ -15,6 +15,7 @@ import { getDoc, doc } from "firebase/firestore";
 const { width, height } = Dimensions.get("window");
 
 const diasSemana = ["Lu", "Ma", "Mi", "Ju", "Vi", "Sá", "Do"];
+const diasFirebase = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 
 const avatarImages = [
   require("../../assets/images/logo.png"),
@@ -23,35 +24,42 @@ const avatarImages = [
   require("../../assets/images/logo.png"),
 ];
 
-const tareasPorDia = {
-  0: [{ id: "1", titulo: "Tarea Domingo 1" }, { id: "2", titulo: "Tarea Domingo 2" }],
-  1: [{ id: "3", titulo: "Tarea Lunes 1" }, { id: "4", titulo: "Tarea Lunes 2" }],
-  2: [{ id: "5", titulo: "Tarea Martes 1" }, { id: "6", titulo: "Tarea Martes 2" }],
-  3: [{ id: "7", titulo: "Tarea Miércoles 1" }, { id: "8", titulo: "Tarea Miércoles 2" }],
-  4: [{ id: "9", titulo: "Tarea Jueves 1" }, { id: "10", titulo: "Tarea Jueves 2" }],
-  5: [{ id: "11", titulo: "Tarea Viernes 1" }, { id: "12", titulo: "Tarea Viernes 2" }],
-  6: [{ id: "13", titulo: "Tarea Sábado 1" }, { id: "14", titulo: "Tarea Sábado 2" }],
-};
-
 export default function HomeScreen() {
   const [avatarIndex, setAvatarIndex] = useState<number | null>(null);
   const [nombre, setNombre] = useState<string>("");
-  const [selectedDayIndex, setSelectedDayIndex] = useState<number>(new Date().getDay() % 7);
+  const [selectedDayIndex, setSelectedDayIndex] = useState<number>(0);
+  const [tareas, setTareas] = useState<any[]>([]);
   const [tareasSeleccionadas, setTareasSeleccionadas] = useState<{ [key: string]: boolean }>({});
 
   useEffect(() => {
-    const fetchUser = async () => {
+    const fetchUserAndGroup = async () => {
       const user = auth.currentUser;
       if (!user) return;
+
       const userRef = doc(db, "usuarios", user.uid);
       const userSnap = await getDoc(userRef);
+
       if (userSnap.exists()) {
-        const data = userSnap.data();
-        setNombre(data.nombre ?? "");
-        setAvatarIndex(data.avatarIndex ?? null);
+        const userData = userSnap.data();
+        setNombre(userData.nombre ?? "");
+        setAvatarIndex(userData.avatarIndex ?? null);
+
+        if (userData.grupoId) {
+          const grupoRef = doc(db, "grupos", userData.grupoId);
+          const grupoSnap = await getDoc(grupoRef);
+
+          if (grupoSnap.exists()) {
+            const grupoData = grupoSnap.data();
+            const dia = grupoData.inicioSemana;
+            const index = diasFirebase.findIndex(d => d === dia);
+            if (index !== -1) setSelectedDayIndex(index);
+            setTareas(grupoData.tareas ?? []);
+          }
+        }
       }
     };
-    fetchUser();
+
+    fetchUserAndGroup();
   }, []);
 
   const handleTareaSeleccion = (tareaId: string) => {
@@ -61,48 +69,53 @@ export default function HomeScreen() {
     }));
   };
 
+  const nombreDiaFirebase = diasFirebase[selectedDayIndex];
+  const tareasFiltradas = tareas.filter((t) => t.dia === nombreDiaFirebase);
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.header}>
-          <Text style={styles.welcomeText}>Bienvenido</Text>
+          <Text style={styles.welcomeText}>Hola</Text>
           <Text style={styles.brandText}>{nombre} 👋</Text>
           {avatarIndex !== null && (
             <Image source={avatarImages[avatarIndex]} style={styles.avatarTopRight} />
           )}
         </View>
 
-        <View style={styles.calendar}>
-          {diasSemana.map((dia, index) => (
-            <TouchableOpacity
-              key={dia}
-              style={[styles.dayItem, selectedDayIndex === index && styles.dayItemSelected]}
-              onPress={() => setSelectedDayIndex(index)}
-            >
-              <Text style={[styles.dayText, selectedDayIndex === index && { color: "#fff" }]}>
-                {dia}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.calendarScroll}>
+          <View style={styles.calendar}>
+            {diasSemana.map((dia, index) => (
+              <TouchableOpacity
+                key={dia}
+                style={[styles.dayItem, selectedDayIndex === index && styles.dayItemSelected]}
+                onPress={() => setSelectedDayIndex(index)}
+              >
+                <Text style={[styles.dayText, selectedDayIndex === index && { color: "#fff" }]}>
+                  {dia}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </ScrollView>
 
         <View style={styles.tareasContainer}>
-          {tareasPorDia[selectedDayIndex]?.map((tarea) => (
-            <TouchableOpacity
-              key={tarea.id}
-              style={styles.tareaItem}
-              onPress={() => handleTareaSeleccion(tarea.id)}
-            >
-              <View style={styles.checkCircle}>
-                {tareasSeleccionadas[tarea.id] && <View style={styles.checkInner} />}
-              </View>
-              <Text style={styles.tareaTexto}>{tarea.titulo}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        <View style={styles.avatarContainer}>
-          <Image source={require("../../assets/images/logo.png")} style={styles.avatarDino} />
+          {tareasFiltradas.length > 0 ? (
+            tareasFiltradas.map((tarea) => (
+              <TouchableOpacity
+                key={tarea.id}
+                style={styles.tareaItem}
+                onPress={() => handleTareaSeleccion(tarea.id)}
+              >
+                <View style={[styles.checkCircle, tareasSeleccionadas[tarea.id] && styles.checkedDone]}>
+                  {tareasSeleccionadas[tarea.id] && <View style={styles.checkInner} />}
+                </View>
+                <Text style={styles.tareaTexto}>{tarea.title}</Text>
+              </TouchableOpacity>
+            ))
+          ) : (
+            <Text style={{ color: "#aaa", fontStyle: "italic" }}>No hay tareas para este día.</Text>
+          )}
         </View>
 
         <Text style={styles.sectionTitle}>Semana Actual</Text>
@@ -152,18 +165,23 @@ const styles = StyleSheet.create({
     marginRight: 5,
     resizeMode: "contain",
   },
+  calendarScroll: {
+    maxHeight: 60,
+    marginVertical: 10,
+  },
   calendar: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    marginVertical: 20,
+    gap: width * 0.1,
+    alignItems: "center",
   },
   dayItem: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 45,
+    height: 45,
+    borderRadius: 22.5,
     backgroundColor: "#f0f0f0",
     justifyContent: "center",
     alignItems: "center",
+    marginRight: 10,
   },
   dayItemSelected: {
     backgroundColor: "#1f618d",
@@ -190,6 +208,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginRight: 10,
   },
+  checkedDone: {
+    borderColor: "#1f618d",
+    backgroundColor: "#d6eaf8",
+  },
   checkInner: {
     width: 12,
     height: 12,
@@ -199,16 +221,6 @@ const styles = StyleSheet.create({
   tareaTexto: {
     fontSize: 16,
     color: "#333",
-  },
-  avatarContainer: {
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  avatarDino: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    resizeMode: "contain",
   },
   sectionTitle: {
     fontSize: 18,
