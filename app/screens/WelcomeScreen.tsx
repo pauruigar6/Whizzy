@@ -105,8 +105,8 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: "center",
-    marginTop: height * 0.15,
-    marginBottom:  height * -0.05,
+    marginTop: height * 0.08,
+    marginBottom:  height * -0.1,
   },
   sliderContainer: {
     flex: 1,

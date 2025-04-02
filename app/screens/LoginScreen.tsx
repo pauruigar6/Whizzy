@@ -9,7 +9,6 @@ import {
   Image,
   ScrollView,
   Dimensions,
-  Alert,
 } from "react-native";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth, db } from "@/firebase/firebaseConfig";
@@ -20,10 +19,14 @@ const { height } = Dimensions.get("window");
 export default function LoginScreen({ navigation }: { navigation: any }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loginError, setLoginError] = useState("");
 
   const handleLogin = async () => {
+    setLoginError("");
+
     if (!email || !password) {
-      return Alert.alert("Error", "Por favor completa todos los campos.");
+      setLoginError("Por favor completa todos los campos.");
+      return;
     }
 
     try {
@@ -33,17 +36,24 @@ export default function LoginScreen({ navigation }: { navigation: any }) {
       const userRef = doc(db, "usuarios", user.uid);
       const userSnap = await getDoc(userRef);
 
-      const userData = userSnap.exists() ? userSnap.data() : null;
-      const hasProfile = userData?.nombre && userData?.avatarIndex !== undefined;
+      if (userSnap.exists()) {
+        const userData = userSnap.data();
+        const nombre = userData?.nombre;
+        const avatarIndex = userData?.avatarIndex;
 
-      if (hasProfile) {
-        navigation.navigate("SelectGroup");
+        const hasProfile = typeof nombre === "string" && nombre.trim() !== "" && typeof avatarIndex === "number";
+
+        if (hasProfile) {
+          navigation.navigate("SelectGroup");
+        } else {
+          navigation.navigate("ProfileSetup");
+        }
       } else {
         navigation.navigate("ProfileSetup");
       }
 
     } catch (error: any) {
-      Alert.alert("Error", error.message);
+      setLoginError("El usuario o la contraseña introducidos no son correctos.");
     }
   };
 
@@ -67,19 +77,27 @@ export default function LoginScreen({ navigation }: { navigation: any }) {
             placeholder="Correo electrónico"
             style={styles.input}
             value={email}
-            onChangeText={setEmail}
+            onChangeText={(text) => {
+              setEmail(text);
+              setLoginError("");
+            }}
           />
           <TextInput
             placeholder="Contraseña"
             secureTextEntry
             style={styles.input}
             value={password}
-            onChangeText={setPassword}
+            onChangeText={(text) => {
+              setPassword(text);
+              setLoginError("");
+            }}
           />
 
           <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
             <Text style={styles.loginText}>Iniciar sesión</Text>
           </TouchableOpacity>
+
+          {loginError ? <Text style={styles.errorText}>{loginError}</Text> : null}
 
           <Text style={styles.signupLink}>
             ¿No tienes cuenta?{" "}
@@ -137,7 +155,7 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 10,
     alignItems: "center",
-    marginBottom: 20,
+    marginBottom: 10,
   },
   loginText: {
     color: "#fff",
@@ -148,5 +166,10 @@ const styles = StyleSheet.create({
     color: "#666",
     marginBottom: 20,
   },
-
+  errorText: {
+    color: "red",
+    fontSize: 12,
+    marginBottom: 10,
+    marginLeft: 5,
+  },
 });

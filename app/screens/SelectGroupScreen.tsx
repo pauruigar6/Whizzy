@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,11 +8,12 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
-  Alert,
+  Dimensions,
 } from "react-native";
 import { auth, db } from "@/firebase/firebaseConfig";
 import {
   updateDoc,
+  getDoc,
   getDocs,
   query,
   where,
@@ -23,20 +24,51 @@ import {
 } from "firebase/firestore";
 import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
-import { RootStackParamList } from "@/types/navigation"; // Ajusta si no usas alias
+import { RootStackParamList } from "@/types/navigation";
+
+const { width, height } = Dimensions.get("window");
+
+const avatarImages = [
+  require("../../assets/images/logo.png"),
+  require("../../assets/images/logo.png"),
+  require("../../assets/images/logo.png"),
+  require("../../assets/images/logo.png"),
+];
 
 type NavigationProp = StackNavigationProp<RootStackParamList, "SelectGroup">;
 
 export default function SelectGroupScreen() {
   const [codigo, setCodigo] = useState("");
+  const [codigoError, setCodigoError] = useState(""); // ✅ error de código
+  const [avatarIndex, setAvatarIndex] = useState<number | null>(null);
   const navigation = useNavigation<NavigationProp>();
 
+  useEffect(() => {
+    const fetchAvatar = async () => {
+      const user = auth.currentUser;
+      if (!user) return;
+      try {
+        const userDoc = await getDoc(doc(db, "usuarios", user.uid));
+        if (userDoc.exists()) {
+          const data = userDoc.data();
+          setAvatarIndex(data.avatarIndex ?? null);
+        }
+      } catch (error) {
+        console.error("Error al obtener avatar del usuario:", error);
+      }
+    };
+
+    fetchAvatar();
+  }, []);
+
   const unirseConCodigo = async () => {
+    setCodigoError(""); // limpiar errores previos
     const usuario = auth.currentUser;
     if (!usuario) return;
 
     if (!codigo.trim()) {
-      return Alert.alert("Error", "Introduce un código de invitación.");
+      setCodigoError("Introduce un código de invitación.");
+      return;
     }
 
     try {
@@ -47,10 +79,8 @@ export default function SelectGroupScreen() {
       const snapshot = await getDocs(q);
 
       if (snapshot.empty) {
-        return Alert.alert(
-          "Código no válido",
-          "No se encontró ningún grupo con ese código."
-        );
+        setCodigoError("No se encontró ningún grupo con ese código.");
+        return;
       }
 
       const grupoDoc = snapshot.docs[0];
@@ -64,10 +94,9 @@ export default function SelectGroupScreen() {
         miembros: arrayUnion(usuario.uid),
       });
 
-      Alert.alert("¡Te uniste al grupo!", "Ahora puedes empezar.");
       // navigation.navigate("Home");
     } catch (error: any) {
-      Alert.alert("Error al unirse", error.message);
+      setCodigoError("Error al unirse al grupo.");
     }
   };
 
@@ -92,52 +121,47 @@ export default function SelectGroupScreen() {
 
       navigation.navigate("CreateGroup");
     } catch (error: any) {
-      Alert.alert("Error", error.message);
+      console.error("Error al crear grupo:", error.message);
     }
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Encabezado */}
-      <View style={styles.header}>
-        <Text style={styles.welcomeText}>Bienvenido a</Text>
-        <Text style={styles.brandText}>Whizzy</Text>
-      </View>
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <View style={styles.header}>
+          <Text style={styles.welcomeText}>Bienvenido a</Text>
+          <Text style={styles.brandText}>Whizzy</Text>
+          {avatarIndex !== null && (
+            <Image source={avatarImages[avatarIndex]} style={styles.avatarTopRight} />
+          )}
+        </View>
 
-      {/* Imagen ilustrativa */}
-      <Image
-        source={require("../../assets/images/logo.png")}
-        style={styles.illustration}
-      />
-
-      <ScrollView contentContainerStyle={styles.content}>
-        {/* Crear nuevo equipo */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Crear un nuevo equipo</Text>
           <Text style={styles.cardText}>
-            Empieza con un nuevo equipo o casa, descubre Whizzy e invita a otros
-            miembros.
+            Empieza con un nuevo equipo o casa, descubre Whizzy e invita a otros miembros.
           </Text>
           <TouchableOpacity style={styles.button} onPress={crearGrupoEIr}>
             <Text style={styles.buttonText}>Crear un nuevo equipo</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Unirse con código */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>
-            Únase a un equipo existente con código
-          </Text>
+          <Text style={styles.cardTitle}>Únase a un equipo existente con código</Text>
           <Text style={styles.cardText}>
-            Consigue un código de invitación de otro miembro de Whizzy. Rellena
-            el código y únete al equipo automáticamente.
+            Consigue un código de invitación de otro miembro de Whizzy. Rellena el código y únete al equipo automáticamente.
           </Text>
           <TextInput
             style={styles.input}
             placeholder="Código de invitación"
             value={codigo}
-            onChangeText={setCodigo}
+            onChangeText={(text) => {
+              setCodigo(text);
+              setCodigoError("");
+            }}
           />
+          {codigoError ? <Text style={styles.errorText}>{codigoError}</Text> : null}
+
           <TouchableOpacity
             style={[styles.button, { marginTop: 10 }]}
             onPress={unirseConCodigo}
@@ -145,26 +169,27 @@ export default function SelectGroupScreen() {
             <Text style={styles.buttonText}>Unirse con código</Text>
           </TouchableOpacity>
         </View>
-
-        {/* Unirse con enlace (no implementado aún) */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>
-            Únase a un equipo existente con enlace
-          </Text>
-          <Text style={styles.cardText}>
-            Consigue un enlace de invitación de otro miembro de Whizzy. Ábrelo o
-            pégalo aquí para unirte.
-          </Text>
-          <TextInput style={styles.input} placeholder="Enlace de invitación" />
-        </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: "#fff" },
-  header: { marginTop: 50 },
+  container: {
+    flex: 1,
+    backgroundColor: "white",
+  },
+  scrollContainer: {
+    paddingHorizontal: 20,
+    paddingBottom: 30,
+    minHeight: height,
+    justifyContent: "flex-start",
+  },
+  header: {
+    marginTop: height * 0.06,
+    marginBottom: height * 0.06,
+    position: "relative",
+  },
   welcomeText: {
     fontSize: 22,
     color: "#1f618d",
@@ -174,14 +199,16 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#1f618d",
   },
-  illustration: {
-    width: "100%",
-    height: 180,
+  avatarTopRight: {
+    position: "absolute",
+    right: 0,
+    top: 0,
+    width: 100,
+    height: 100,
+    borderRadius: 25,
+    marginTop: 5,
+    marginRight: 5,
     resizeMode: "contain",
-    marginVertical: 20,
-  },
-  content: {
-    paddingBottom: 40,
   },
   card: {
     borderTopWidth: 1,
@@ -205,15 +232,21 @@ const styles = StyleSheet.create({
     padding: 12,
     marginTop: 5,
   },
+  errorText: {
+    color: "red",
+    fontSize: 12,
+    marginTop: 5,
+    marginLeft: 5,
+  },
   button: {
     backgroundColor: "#1f618d",
     padding: 10,
     borderRadius: 10,
     marginTop: 10,
-    marginLeft: 200,
     alignItems: "center",
     width: 200,
     height: 40,
+    alignSelf: "flex-end",
   },
   buttonText: {
     color: "#fff",

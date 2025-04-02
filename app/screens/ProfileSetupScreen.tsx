@@ -6,52 +6,55 @@ import {
   SafeAreaView,
   TextInput,
   TouchableOpacity,
-  FlatList,
   Image,
-  Alert,
+  Dimensions,
+  ScrollView,
 } from "react-native";
 import { getAuth } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
-import { db } from "@/firebase/firebaseConfig"; // ajusta si no usas alias
+import { db } from "@/firebase/firebaseConfig";
+
+const { width, height } = Dimensions.get("window");
 
 const avatars = [
   require("../../assets/images/logo.png"),
   require("../../assets/images/logo.png"),
   require("../../assets/images/logo.png"),
   require("../../assets/images/logo.png"),
-  require("../../assets/images/logo.png"),
-  require("../../assets/images/logo.png"),
-  require("../../assets/images/logo.png"),
-  require("../../assets/images/logo.png"),
-  require("../../assets/images/logo.png"),
-  require("../../assets/images/logo.png"),
-  require("../../assets/images/logo.png"),
-  require("../../assets/images/logo.png"),
-  require("../../assets/images/logo.png"),
-  require("../../assets/images/logo.png"),
-  require("../../assets/images/logo.png"),
-  require("../../assets/images/logo.png"),
 ];
 
-export default function ProfileSetupScreen({
-  navigation,
-}: {
-  navigation: any;
-}) {
+export default function ProfileSetupScreen({ navigation }: { navigation: any }) {
   const [name, setName] = useState("");
   const [selectedAvatar, setSelectedAvatar] = useState<number | null>(null);
+  const [nameError, setNameError] = useState("");
+  const [avatarError, setAvatarError] = useState("");
 
   const auth = getAuth();
   const user = auth.currentUser;
   const userEmail = user?.email ?? "tu correo";
 
   const handleValidate = async () => {
-    if (!name || selectedAvatar === null || !user) {
-      return Alert.alert(
-        "Faltan datos",
-        "Debes escribir tu nombre y elegir un avatar."
-      );
+    setNameError("");
+    setAvatarError("");
+
+    let hasError = false;
+
+    if (!name.trim()) {
+      setNameError("Por favor escribe un nombre.");
+      hasError = true;
     }
+
+    if (selectedAvatar === null) {
+      setAvatarError("Debes elegir un avatar.");
+      hasError = true;
+    }
+
+    if (!user) {
+      setNameError("No se ha detectado usuario.");
+      hasError = true;
+    }
+
+    if (hasError) return;
 
     try {
       await setDoc(doc(db, "usuarios", user.uid), {
@@ -61,60 +64,85 @@ export default function ProfileSetupScreen({
         avatarIndex: selectedAvatar,
         creadoEn: new Date(),
       });
-      navigation.navigate("SelectGroup"); // 👈 Redirige a la nueva screen
+
+      navigation.navigate("SelectGroup");
     } catch (error: any) {
-      Alert.alert("Error", error.message);
+      setNameError("Ocurrió un error al guardar el perfil.");
     }
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.welcomeText}>Empezar a jugar</Text>
-        <Text style={styles.brandText}>Whizzy</Text>
-      </View>
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <View style={styles.header}>
+          <Text style={styles.welcomeText}>Empezar a jugar</Text>
+          <Text style={styles.brandText}>Whizzy</Text>
+        </View>
 
-      <Text style={styles.description}>
-        Has creado con éxito tu cuenta de Whizzy para{" "}
-        <Text style={styles.email}>{userEmail}</Text>.{"\t"}
-        Elige un nombre y un avatar para empezar a jugar.
-      </Text>
+        <Text style={styles.description}>
+          Has creado con éxito tu cuenta de Whizzy para{" "}
+          <Text style={styles.email}>{userEmail}</Text>. Elige un nombre y un
+          avatar para empezar a jugar.
+        </Text>
 
-      <TextInput
-        placeholder="Nombre"
-        value={name}
-        onChangeText={setName}
-        style={styles.input}
-      />
+        <TextInput
+          placeholder="Nombre"
+          style={styles.input}
+          value={name}
+          onChangeText={(text) => {
+            setName(text);
+            setNameError("");
+          }}
+        />
+        {nameError ? <Text style={styles.errorText}>{nameError}</Text> : null}
 
-      <FlatList
-        data={avatars}
-        keyExtractor={(_, i) => i.toString()}
-        numColumns={4}
-        contentContainerStyle={{ alignItems: "center", marginVertical: 20 }}
-        renderItem={({ item, index }) => (
-          <TouchableOpacity onPress={() => setSelectedAvatar(index)}>
-            <Image
-              source={item}
-              style={[
-                styles.avatar,
-                selectedAvatar === index && styles.selectedAvatar,
-              ]}
-            />
-          </TouchableOpacity>
-        )}
-      />
+        <View style={styles.avatarList}>
+          {avatars.map((item, index) => (
+            <TouchableOpacity
+              key={index}
+              onPress={() => {
+                setSelectedAvatar(index);
+                setAvatarError("");
+              }}
+            >
+              <Image
+                source={item}
+                style={[
+                  styles.avatar,
+                  selectedAvatar === index && styles.selectedAvatar,
+                ]}
+              />
+            </TouchableOpacity>
+          ))}
+        </View>
 
-      <TouchableOpacity style={styles.button} onPress={handleValidate}>
-        <Text style={styles.buttonText}>Validar</Text>
-      </TouchableOpacity>
+        {avatarError ? <Text style={styles.errorText}>{avatarError}</Text> : null}
+
+        <TouchableOpacity style={styles.button} onPress={handleValidate}>
+          <Text style={styles.buttonText}>Validar</Text>
+        </TouchableOpacity>
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
+const avatarSize = width / 5;
+
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: "#fff" },
-  header: { marginTop: 50 },
+  container: {
+    flex: 1,
+    backgroundColor: "white",
+  },
+  scrollContainer: {
+    paddingHorizontal: 20,
+    paddingBottom: 30,
+    minHeight: height,
+    justifyContent: "flex-start",
+  },
+  header: {
+    marginTop: height * 0.06,
+    marginBottom: height * 0.04,
+  },
   welcomeText: {
     fontSize: 22,
     color: "#1f618d",
@@ -125,11 +153,9 @@ const styles = StyleSheet.create({
     color: "#1f618d",
   },
   description: {
-    fontSize: 15,
+    fontSize: 18,
     color: "#666",
-    marginTop: 10,
-    marginBottom: 20,
-    lineHeight: 22,
+    lineHeight: width * 0.05,
   },
   email: {
     fontWeight: "bold",
@@ -137,20 +163,35 @@ const styles = StyleSheet.create({
   },
   input: {
     backgroundColor: "#ebf5fb",
-    borderRadius: 10,
     padding: 15,
-    marginTop: 10,
+    borderRadius: 10,
+    marginBottom: 5,
+    marginTop: 20,
   },
+  errorText: {
+    color: "red",
+    fontSize: 12,
+    marginBottom: 10,
+    marginLeft: 5,
+  },
+  avatarList: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginVertical: "5%",
+    paddingHorizontal: 10,
+  },
+  
   avatar: {
-    width: 80,
-    height: 80,
-    margin: 10,
+    width: avatarSize,
+    height: avatarSize,
+    margin: width * 0.015,
     opacity: 0.3,
+    borderRadius: avatarSize / 2,
+    resizeMode: "contain",
   },
   selectedAvatar: {
     borderWidth: 2,
     borderColor: "#1f618d",
-    borderRadius: 30,
     opacity: 1,
   },
   button: {
@@ -158,6 +199,10 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 10,
     alignItems: "center",
+    marginTop: "5%",
   },
-  buttonText: { color: "#fff", fontWeight: "bold" },
+  buttonText: {
+    color: "#fff",
+    fontWeight: "bold",
+  },
 });
