@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,9 +8,11 @@ import {
   TouchableOpacity,
   Alert,
   ScrollView,
+  Dimensions,
 } from "react-native";
 import { auth, db } from "@/firebase/firebaseConfig";
 import { doc, updateDoc, getDoc } from "firebase/firestore";
+const { width, height } = Dimensions.get("window");
 
 const diasSemana = [
   "Lunes",
@@ -22,8 +24,34 @@ const diasSemana = [
   "Domingo",
 ];
 
+const avatarImages = [
+  require("../../assets/images/logo.png"),
+  require("../../assets/images/logo.png"),
+  require("../../assets/images/logo.png"),
+  require("../../assets/images/logo.png"),
+];
+
 export default function CreateGroupScreen({ navigation }: { navigation: any }) {
   const [selectedDay, setSelectedDay] = useState<string>("lunes");
+  const [avatarIndex, setAvatarIndex] = useState<number | null>(null); // ✅ Nuevo estado
+
+  useEffect(() => {
+    const fetchAvatar = async () => {
+      const user = auth.currentUser;
+      if (!user) return;
+      try {
+        const userDoc = await getDoc(doc(db, "usuarios", user.uid));
+        if (userDoc.exists()) {
+          const data = userDoc.data();
+          setAvatarIndex(data.avatarIndex ?? null);
+        }
+      } catch (error) {
+        console.error("Error al obtener avatar del usuario:", error);
+      }
+    };
+
+    fetchAvatar();
+  }, []);
 
   const handleSaveDay = async () => {
     const user = auth.currentUser;
@@ -59,13 +87,11 @@ export default function CreateGroupScreen({ navigation }: { navigation: any }) {
         <View style={styles.header}>
           <Text style={styles.welcomeText}>Bienvenido a</Text>
           <Text style={styles.brandText}>Whizzy</Text>
+          {avatarIndex !== null && (
+            <Image source={avatarImages[avatarIndex]} style={styles.avatarTopRight} />
+          )}
         </View>
-
-        <Image
-          source={require("../../assets/images/logo.png")}
-          style={styles.image}
-        />
-
+ <View style={styles.card}>
         <Text style={styles.title}>Elija el día de inicio de la competición</Text>
         <Text style={styles.description}>
           Una vez finalizada la semana, las tareas de la semana anterior ya no se pueden editar.
@@ -92,25 +118,52 @@ export default function CreateGroupScreen({ navigation }: { navigation: any }) {
         <TouchableOpacity style={styles.button} onPress={handleSaveDay}>
           <Text style={styles.buttonText}>Siguiente</Text>
         </TouchableOpacity>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
-  scrollContainer: {
-    padding: 20,
-    paddingBottom: 40,
+  container: {
+    flex: 1,
+    backgroundColor: "white",
   },
-  header: { marginTop: 40 },
-  welcomeText: { fontSize: 22, color: "#1f618d" },
-  brandText: { fontSize: 28, fontWeight: "bold", color: "#1f618d" },
-  image: {
-    width: "100%",
-    height: 150,
+  scrollContainer: {
+    paddingHorizontal: 20,
+    paddingBottom: 30,
+    minHeight: height,
+    justifyContent: "flex-start",
+  },
+  header: {
+    marginTop: height * 0.06,
+    marginBottom: height * 0.06,
+    position: "relative",
+  },
+  welcomeText: {
+    fontSize: 22,
+    color: "#1f618d",
+  },
+  brandText: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: "#1f618d",
+  },
+  avatarTopRight: {
+    position: "absolute",
+    right: 0,
+    top: 0,
+    width: 100,
+    height: 100,
+    borderRadius: 25,
+    marginTop: 5,
+    marginRight: 5,
     resizeMode: "contain",
-    marginVertical: 20,
+  },
+  card: {
+    borderTopWidth: 1,
+    borderColor: "#eee",
+    paddingVertical: 20,
   },
   title: {
     fontSize: 20,
@@ -169,11 +222,10 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 10,
     alignItems: "center",
-    marginTop: "auto",
+    marginBottom: 10,
   },
   buttonText: {
     color: "#fff",
     fontWeight: "bold",
-    fontSize: 16,
   },
 });
