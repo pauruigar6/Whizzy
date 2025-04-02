@@ -17,6 +17,7 @@ import {
   getDoc,
   updateDoc,
 } from "firebase/firestore";
+import { router } from "expo-router";
 
 const { height } = Dimensions.get("window");
 
@@ -118,7 +119,7 @@ export default function TaskSelectScreen({ navigation }) {
         tareas: selected,
       });
 
-      navigation.navigate("Home");
+      router.replace("/(tabs)/HomeScreen");
     } catch (error) {
       console.error("Error actualizando grupo con tareas:", error);
     }
@@ -272,8 +273,8 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: 0,
     top: 0,
-    width: 100,
-    height: 100,
+    width: 75,
+    height: 75,
     borderRadius: 25,
     marginTop: 5,
     marginRight: 5,

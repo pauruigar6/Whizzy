@@ -17,6 +17,7 @@ import {
 } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { auth, db } from "@/firebase/firebaseConfig";
+import { router } from "expo-router";
 
 const { height } = Dimensions.get("window");
 
@@ -101,7 +102,7 @@ export default function SignupScreen({ navigation }: { navigation: any }) {
         creadoEn: new Date(),
       });
 
-      navigation.navigate("Login");
+        router.replace("/screens/LoginScreen");
     } catch (error: any) {
       if (error.code === "auth/invalid-email") {
         setEmailError("El formato del correo es inválido.");
@@ -181,7 +182,7 @@ export default function SignupScreen({ navigation }: { navigation: any }) {
 
           <Text style={styles.loginLink}>
             ¿Ya tienes una cuenta?{" "}
-            <Text style={{ fontWeight: "bold" }} onPress={() => navigation.navigate("Login")}>
+            <Text style={{ fontWeight: "bold" }} onPress={() =>         router.replace("/screens/LoginScreen")}>
               Acceder
             </Text>
           </Text>

@@ -15,7 +15,15 @@ import { getDoc, doc } from "firebase/firestore";
 const { width, height } = Dimensions.get("window");
 
 const diasSemana = ["Lu", "Ma", "Mi", "Ju", "Vi", "Sá", "Do"];
-const diasFirebase = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+const diasFirebase = [
+  "Lunes",
+  "Martes",
+  "Miércoles",
+  "Jueves",
+  "Viernes",
+  "Sábado",
+  "Domingo",
+];
 
 const avatarImages = [
   require("../../assets/images/logo.png"),
@@ -29,7 +37,9 @@ export default function HomeScreen() {
   const [nombre, setNombre] = useState<string>("");
   const [selectedDayIndex, setSelectedDayIndex] = useState<number>(0);
   const [tareas, setTareas] = useState<any[]>([]);
-  const [tareasSeleccionadas, setTareasSeleccionadas] = useState<{ [key: string]: boolean }>({});
+  const [tareasSeleccionadas, setTareasSeleccionadas] = useState<{
+    [key: string]: boolean;
+  }>({});
 
   useEffect(() => {
     const fetchUserAndGroup = async () => {
@@ -51,7 +61,7 @@ export default function HomeScreen() {
           if (grupoSnap.exists()) {
             const grupoData = grupoSnap.data();
             const dia = grupoData.inicioSemana;
-            const index = diasFirebase.findIndex(d => d === dia);
+            const index = diasFirebase.findIndex((d) => d === dia);
             if (index !== -1) setSelectedDayIndex(index);
             setTareas(grupoData.tareas ?? []);
           }
@@ -74,65 +84,94 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
+      
         <View style={styles.header}>
           <Text style={styles.welcomeText}>Hola</Text>
           <Text style={styles.brandText}>{nombre} 👋</Text>
           {avatarIndex !== null && (
-            <Image source={avatarImages[avatarIndex]} style={styles.avatarTopRight} />
+            <Image
+              source={avatarImages[avatarIndex]}
+              style={styles.avatarTopRight}
+            />
           )}
         </View>
-
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.calendarScroll}>
-          <View style={styles.calendar}>
-            {diasSemana.map((dia, index) => (
-              <TouchableOpacity
-                key={dia}
-                style={[styles.dayItem, selectedDayIndex === index && styles.dayItemSelected]}
-                onPress={() => setSelectedDayIndex(index)}
-              >
-                <Text style={[styles.dayText, selectedDayIndex === index && { color: "#fff" }]}>
-                  {dia}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </ScrollView>
-
-        <View style={styles.tareasContainer}>
-          {tareasFiltradas.length > 0 ? (
-            tareasFiltradas.map((tarea) => (
-              <TouchableOpacity
-                key={tarea.id}
-                style={styles.tareaItem}
-                onPress={() => handleTareaSeleccion(tarea.id)}
-              >
-                <View style={[styles.checkCircle, tareasSeleccionadas[tarea.id] && styles.checkedDone]}>
-                  {tareasSeleccionadas[tarea.id] && <View style={styles.checkInner} />}
-                </View>
-                <Text style={styles.tareaTexto}>{tarea.title}</Text>
-              </TouchableOpacity>
-            ))
-          ) : (
-            <Text style={{ color: "#aaa", fontStyle: "italic" }}>No hay tareas para este día.</Text>
-          )}
-        </View>
-
-        <Text style={styles.sectionTitle}>Semana Actual</Text>
-
+        <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.card}>
-          <Image source={require("../../assets/images/logo.png")} style={styles.image} />
-          <View style={styles.taskInfo}>
-            <Text style={styles.taskNumber}>5</Text>
-            <Text style={styles.taskLabel}>Quedan</Text>
-            <Text style={styles.taskNumber}>0</Text>
-            <Text style={styles.taskLabel}>Hechas</Text>
-            <Text style={styles.taskNumber}>0</Text>
-            <Text style={styles.taskLabel}>Retraso</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.calendarScroll}
+          >
+            <View style={styles.calendar}>
+              {diasSemana.map((dia, index) => (
+                <TouchableOpacity
+                  key={dia}
+                  style={[
+                    styles.dayItem,
+                    selectedDayIndex === index && styles.dayItemSelected,
+                  ]}
+                  onPress={() => setSelectedDayIndex(index)}
+                >
+                  <Text
+                    style={[
+                      styles.dayText,
+                      selectedDayIndex === index && { color: "#fff" },
+                    ]}
+                  >
+                    {dia}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </ScrollView>
+
+          <View style={styles.tareasContainer}>
+            {tareasFiltradas.length > 0 ? (
+              tareasFiltradas.map((tarea) => (
+                <TouchableOpacity
+                  key={tarea.id}
+                  style={styles.tareaItem}
+                  onPress={() => handleTareaSeleccion(tarea.id)}
+                >
+                  <View
+                    style={[
+                      styles.checkCircle,
+                      tareasSeleccionadas[tarea.id] && styles.checkedDone,
+                    ]}
+                  >
+                    {tareasSeleccionadas[tarea.id] && (
+                      <View style={styles.checkInner} />
+                    )}
+                  </View>
+                  <Text style={styles.tareaTexto}>{tarea.title}</Text>
+                </TouchableOpacity>
+              ))
+            ) : (
+              <Text style={{ color: "#aaa", fontStyle: "italic" }}>
+                No hay tareas para este día.
+              </Text>
+            )}
           </View>
-          <TouchableOpacity style={styles.button}>
-            <Text style={styles.buttonText}>Validar Tarea</Text>
-          </TouchableOpacity>
+
+          <Text style={styles.sectionTitle}>Semana Actual</Text>
+
+          <View style={styles.card2}>
+            <Image
+              source={require("../../assets/images/logo.png")}
+              style={styles.image}
+            />
+            <View style={styles.taskInfo}>
+              <Text style={styles.taskNumber}>5</Text>
+              <Text style={styles.taskLabel}>Quedan</Text>
+              <Text style={styles.taskNumber}>0</Text>
+              <Text style={styles.taskLabel}>Hechas</Text>
+              <Text style={styles.taskNumber}>0</Text>
+              <Text style={styles.taskLabel}>Retraso</Text>
+            </View>
+            <TouchableOpacity style={styles.button}>
+              <Text style={styles.buttonText}>Validar Tarea</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -140,7 +179,10 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "white" },
+  container: {
+    flex: 1,
+    backgroundColor: "white",
+  },
   scrollContainer: {
     paddingHorizontal: 20,
     paddingBottom: 30,
@@ -148,12 +190,21 @@ const styles = StyleSheet.create({
     justifyContent: "flex-start",
   },
   header: {
+    paddingHorizontal: 20,
+    paddingBottom: 30,
     marginTop: height * 0.06,
     marginBottom: height * 0.06,
     position: "relative",
   },
-  welcomeText: { fontSize: 22, color: "#1f618d" },
-  brandText: { fontSize: 28, fontWeight: "bold", color: "#1f618d" },
+  welcomeText: {
+    fontSize: 22,
+    color: "#1f618d",
+  },
+  brandText: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: "#1f618d",
+  },
   avatarTopRight: {
     position: "absolute",
     right: 0,
@@ -164,6 +215,11 @@ const styles = StyleSheet.create({
     marginTop: 5,
     marginRight: 5,
     resizeMode: "contain",
+  },
+  card: {
+    borderTopWidth: 1,
+    borderColor: "#eee",
+    paddingVertical: 20,
   },
   calendarScroll: {
     maxHeight: 60,
@@ -228,7 +284,7 @@ const styles = StyleSheet.create({
     color: "#333",
     marginBottom: 10,
   },
-  card: {
+  card2: {
     backgroundColor: "#f9f9f9",
     borderRadius: 10,
     padding: 20,

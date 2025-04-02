@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { auth, db } from "@/firebase/firebaseConfig";
 import { doc, updateDoc, getDoc } from "firebase/firestore";
+import { router } from "expo-router";
 const { width, height } = Dimensions.get("window");
 
 const diasSemana = [
@@ -88,7 +89,7 @@ export default function CreateGroupScreen({ navigation }: { navigation: any }) {
         nombre: groupName.trim(),
       });
 
-      navigation.navigate("SelectTask");
+      router.replace("/screens/SelectTaskScreen");
     } catch (error: any) {
       console.error("Error:", error.message);
     }
@@ -186,8 +187,8 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: 0,
     top: 0,
-    width: 100,
-    height: 100,
+    width: 75,
+    height: 75,
     borderRadius: 25,
     marginTop: 5,
     marginRight: 5,

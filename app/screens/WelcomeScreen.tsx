@@ -1,3 +1,4 @@
+import { router } from "expo-router";
 import React, { useState } from "react";
 import {
   View,
@@ -85,11 +86,11 @@ const WelcomeScreen = ({ navigation }: { navigation: any }) => {
       <View style={styles.buttonContainer}>
         <TouchableOpacity
           style={styles.button}
-          onPress={() => navigation.navigate("Signup")}
+          onPress={() =>         router.replace("/screens/SignupScreen")}
         >
           <Text style={styles.buttonText}>Crear una cuenta Whizzy</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate("Login")}>
+        <TouchableOpacity onPress={() =>         router.replace("/screens/LoginScreen")}>
           <Text style={styles.loginText}>¿Ya tienes una cuenta? <Text style={styles.accessText}>Acceder</Text></Text>
         </TouchableOpacity>
       </View>
@@ -130,9 +131,9 @@ const styles = StyleSheet.create({
     color: "#1f618d",
   },
   image: {
-    width: width *0.08,
-    height: width *0.08,
-    marginBottom: 20,
+    width: 180,
+    height: 180,
+    margin: 40,
     resizeMode: "contain",
   },
   title: {

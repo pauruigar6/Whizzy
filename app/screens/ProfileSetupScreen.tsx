@@ -13,6 +13,7 @@ import {
 import { getAuth } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { db } from "@/firebase/firebaseConfig";
+import { router } from "expo-router";
 
 const { width, height } = Dimensions.get("window");
 
@@ -65,7 +66,7 @@ export default function ProfileSetupScreen({ navigation }: { navigation: any }) 
         creadoEn: new Date(),
       });
 
-      navigation.navigate("SelectGroup");
+        router.replace("/screens/SelectGroupScreen");
     } catch (error: any) {
       setNameError("Ocurrió un error al guardar el perfil.");
     }

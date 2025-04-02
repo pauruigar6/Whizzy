@@ -26,6 +26,7 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { RootStackParamList } from "@/types/navigation";
+import { router } from "expo-router";
 
 const { width, height } = Dimensions.get("window");
 
@@ -124,7 +125,8 @@ export default function SelectGroupScreen() {
         miembros: arrayUnion(usuario.uid),
       });
 
-      navigation.navigate("Home");
+      router.replace("/(tabs)/HomeScreen");
+
     } catch (error: any) {
       setCodigoError("Error al unirse al grupo.");
     }
@@ -149,7 +151,7 @@ export default function SelectGroupScreen() {
         grupoId: nuevoGrupo.id,
       });
 
-      navigation.navigate("CreateGroup");
+        router.replace("/screens/CreateGroupScreen");
     } catch (error: any) {
       console.error("Error al crear grupo:", error.message);
     }
@@ -163,7 +165,7 @@ export default function SelectGroupScreen() {
       await updateDoc(doc(db, "usuarios", usuario.uid), {
         grupoId,
       });
-      navigation.navigate("Home");
+      router.replace("/(tabs)/HomeScreen");
     } catch (error) {
       console.error("Error al seleccionar grupo existente:", error);
     }
@@ -269,8 +271,8 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: 0,
     top: 0,
-    width: 100,
-    height: 100,
+    width: 75,
+    height: 75,
     borderRadius: 25,
     marginTop: 5,
     marginRight: 5,

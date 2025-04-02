@@ -13,6 +13,7 @@ import {
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth, db } from "@/firebase/firebaseConfig";
 import { doc, getDoc } from "firebase/firestore";
+import { router } from "expo-router";
 
 const { height } = Dimensions.get("window");
 
@@ -44,12 +45,12 @@ export default function LoginScreen({ navigation }: { navigation: any }) {
         const hasProfile = typeof nombre === "string" && nombre.trim() !== "" && typeof avatarIndex === "number";
 
         if (hasProfile) {
-          navigation.navigate("SelectGroup");
+          router.replace("/screens/SelectGroupScreen");
         } else {
-          navigation.navigate("ProfileSetup");
+          router.replace("/screens/ProfileSetupScreen");
         }
       } else {
-        navigation.navigate("ProfileSetup");
+        router.replace("/screens/ProfileSetupScreen");
       }
 
     } catch (error: any) {
@@ -101,7 +102,7 @@ export default function LoginScreen({ navigation }: { navigation: any }) {
 
           <Text style={styles.signupLink}>
             ¿No tienes cuenta?{" "}
-            <Text style={{ fontWeight: "bold" }} onPress={() => navigation.navigate("Signup")}>
+            <Text style={{ fontWeight: "bold" }} onPress={() =>         router.replace("/screens/SignupScreen")}>
               Regístrate
             </Text>
           </Text>
