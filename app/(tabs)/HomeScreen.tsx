@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { auth, db } from "@/firebase/firebaseConfig";
 import { getDoc, doc } from "firebase/firestore";
+import { useRouter } from "expo-router";
 
 const { width, height } = Dimensions.get("window");
 
@@ -40,6 +41,8 @@ export default function HomeScreen() {
   const [tareasSeleccionadas, setTareasSeleccionadas] = useState<{
     [key: string]: boolean;
   }>({});
+
+  const router = useRouter();
 
   useEffect(() => {
     const fetchUserAndGroup = async () => {
@@ -84,18 +87,23 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      
-        <View style={styles.header}>
-          <Text style={styles.welcomeText}>Hola</Text>
-          <Text style={styles.brandText}>{nombre} 👋</Text>
-          {avatarIndex !== null && (
+      <View style={styles.header}>
+        <Text style={styles.welcomeText}>Hola</Text>
+        <Text style={styles.brandText}>{nombre} 👋</Text>
+        {avatarIndex !== null && (
+          <TouchableOpacity
+            style={styles.avatarTouch}
+            onPress={() => router.push("/screens/ProfileScreen")}
+          >
             <Image
               source={avatarImages[avatarIndex]}
               style={styles.avatarTopRight}
             />
-          )}
-        </View>
-        <ScrollView contentContainerStyle={styles.scrollContainer}>
+          </TouchableOpacity>
+        )}
+      </View>
+
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.card}>
           <ScrollView
             horizontal
@@ -205,10 +213,12 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#1f618d",
   },
-  avatarTopRight: {
+  avatarTouch: {
     position: "absolute",
-    right: 0,
     top: 0,
+    right: 0,
+  },
+  avatarTopRight: {
     width: 75,
     height: 75,
     borderRadius: 25,

@@ -1,7 +1,6 @@
 import { Tabs } from "expo-router";
-import { Platform } from "react-native";
+import { Platform, View, StyleSheet } from "react-native";
 import { IconSymbol } from "@/components/ui/IconSymbol";
-import TabBarBackground from "@/components/ui/TabBarBackground";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { Colors } from "@/constants/Colors";
 
@@ -12,37 +11,82 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: Colors[colorScheme ?? "light"].tint,
-        tabBarBackground: TabBarBackground,
-        tabBarStyle: Platform.select({
-          ios: {
-            position: "absolute",
-          },
-          default: {},
-        }),
+        tabBarShowLabel: true,
+        tabBarActiveTintColor: "#1f618d",
+        tabBarInactiveTintColor: "#ccc",
+        tabBarStyle: styles.tabBar,
+        tabBarItemStyle: {
+          paddingVertical: 10,
+        },
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: "600",
+        },
+        tabBarBackground: () => <View style={styles.tabBarBackground} />,
       }}
     >
       <Tabs.Screen
-        name="Home"
+        name="HomeScreen"
         options={{
           title: "Home",
           tabBarIcon: ({ color }) => (
-            <IconSymbol name="house.fill" size={28} color={color} />
+            <IconSymbol name="house.fill" size={26} color={color} />
           ),
         }}
       />
-      
       <Tabs.Screen
-        name="explore"
+        name="TasksScreen"
         options={{
-          title: "Explorar",
+          title: "Tareas",
           tabBarIcon: ({ color }) => (
-            <IconSymbol name="paperplane.fill" size={28} color={color} />
+            <IconSymbol name="checkmark.circle.fill" size={26} color={color} />
           ),
         }}
       />
-      
+      <Tabs.Screen
+        name="PointsScreen"
+        options={{
+          title: "Puntos",
+          tabBarIcon: ({ color }) => (
+            <IconSymbol name="star.fill" size={26} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="SettingsScreen"
+        options={{
+          title: "Ajustes",
+          tabBarIcon: ({ color }) => (
+            <IconSymbol name="gearshape.fill" size={26} color={color} />
+          ),
+        }}
+      />
     </Tabs>
-    
   );
 }
+
+const styles = StyleSheet.create({
+  tabBar: {
+    position: "absolute",
+    bottom: 20,
+    left: 20,
+    right: 20,
+    height: 70,
+    borderRadius: 20,
+    backgroundColor: "1f618d",
+    borderTopWidth: 0,
+    elevation: 0,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    marginHorizontal: 20,
+  },
+  tabBarBackground: {
+    flex: 1,
+    borderRadius: 20,
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: "#eee",
+  },
+});
