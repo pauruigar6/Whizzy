@@ -25,8 +25,8 @@ import { useRouter } from "expo-router";
 export default function ProfileScreen() {
   const [nombre, setNombre] = useState("");
   const [email, setEmail] = useState("");
-  const [grupoActual, setGrupoActual] = useState<any | null>(null);
-  const [otrosGrupos, setOtrosGrupos] = useState<any[]>([]);
+  const [grupoActual, setGrupoActual] = useState(null);
+  const [otrosGrupos, setOtrosGrupos] = useState([]);
   const router = useRouter();
 
   useEffect(() => {
@@ -44,28 +44,24 @@ export default function ProfileScreen() {
         setNombre(userData?.nombre ?? "");
 
         const grupoIdActual = userData?.grupoId ?? null;
-
-        let grupoActualData = null;
-
         if (grupoIdActual) {
           const grupoRef = doc(db, "grupos", grupoIdActual);
           const grupoSnap = await getDoc(grupoRef);
           if (grupoSnap.exists()) {
             const data = grupoSnap.data();
-            grupoActualData = {
+            setGrupoActual({
               id: grupoIdActual,
               nombre: data.nombre || "Grupo sin nombre",
               codigo: data.codigoInvitacion,
-            };
-            setGrupoActual(grupoActualData);
+            });
           }
         }
 
-        const q = query(
+        const gruposQuery = query(
           collection(db, "grupos"),
           where("miembros", "array-contains", user.uid)
         );
-        const snapshot = await getDocs(q);
+        const snapshot = await getDocs(gruposQuery);
 
         const gruposRestantes = snapshot.docs
           .filter((doc) => doc.id !== grupoIdActual)
@@ -82,7 +78,8 @@ export default function ProfileScreen() {
     fetchUserDataAndGroups();
   }, []);
 
-  const showToast = (message: string) => {
+  // Muestra un mensaje según la plataforma (Android: Toast, iOS: Alert)
+  const showToast = (message) => {
     if (Platform.OS === "android") {
       ToastAndroid.show(message, ToastAndroid.SHORT);
     } else {
@@ -90,6 +87,7 @@ export default function ProfileScreen() {
     }
   };
 
+  // Confirma la acción de cerrar sesión
   const confirmLogout = () => {
     Alert.alert(
       "Cerrar sesión",
@@ -105,11 +103,14 @@ export default function ProfileScreen() {
     );
   };
 
+  // Cierra la sesión y redirige a WelcomeScreen
   const handleLogout = async () => {
     try {
+      // Cierra la sesión con Firebase
       await signOut(auth);
-      Alert.alert("Sesión cerrada correctamente");
-      router.replace("/screens/WelcomeScreen"); // Redirige al login o welcome
+      showToast("Sesión cerrada correctamente");
+      // Redirige a la pantalla WelcomeScreen
+      router.replace("/screens/WelcomeScreen");
     } catch (error) {
       Alert.alert("Error", "Hubo un problema al cerrar sesión.");
     }

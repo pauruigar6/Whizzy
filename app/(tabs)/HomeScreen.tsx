@@ -161,21 +161,9 @@ export default function HomeScreen() {
             )}
           </View>
 
-          <Text style={styles.sectionTitle}>Semana Actual</Text>
-
           <View style={styles.card2}>
-            <Image
-              source={require("../../assets/images/logo.png")}
-              style={styles.image}
-            />
-            <View style={styles.taskInfo}>
-              <Text style={styles.taskNumber}>5</Text>
-              <Text style={styles.taskLabel}>Quedan</Text>
-              <Text style={styles.taskNumber}>0</Text>
-              <Text style={styles.taskLabel}>Hechas</Text>
-              <Text style={styles.taskNumber}>0</Text>
-              <Text style={styles.taskLabel}>Retraso</Text>
-            </View>
+           
+            
             <TouchableOpacity style={styles.button}>
               <Text style={styles.buttonText}>Validar Tarea</Text>
             </TouchableOpacity>
@@ -295,7 +283,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   card2: {
-    backgroundColor: "#f9f9f9",
+    backgroundColor: "white",
     borderRadius: 10,
     padding: 20,
     alignItems: "center",

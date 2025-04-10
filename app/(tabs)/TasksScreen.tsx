@@ -7,15 +7,78 @@ import {
   Image,
   TouchableOpacity,
   ScrollView,
+  Alert,
   Dimensions,
+  Platform,
+  ToastAndroid,
+  SectionList,
+  FlatList,
 } from "react-native";
 import { auth, db } from "@/firebase/firebaseConfig";
-import { getDoc, doc } from "firebase/firestore";
+import {
+  getDoc,
+  doc,
+  getDocs,
+  collection,
+  updateDoc,
+} from "firebase/firestore";
+import { useRouter } from "expo-router";
 
 const { width, height } = Dimensions.get("window");
 
-const diasSemana = ["Lu", "Ma", "Mi", "Ju", "Vi", "Sá", "Do"];
-const diasFirebase = [
+const avatarImages = [
+  require("../../assets/images/logo.png"),
+  require("../../assets/images/logo.png"),
+  require("../../assets/images/logo.png"),
+  require("../../assets/images/logo.png"),
+];
+
+// Datos de tareas (lista entera de tareas) según tu SelectTask
+const simpleSections = [
+  {
+    title: "Cocina",
+    data: [
+      { id: "1", title: "Fregar los platos", points: 15 },
+      { id: "2", title: "Limpiar la cocina", points: 25 },
+      { id: "3", title: "Poner la mesa", points: 10 },
+      { id: "4", title: "Poner lavavajillas", points: 10 },
+      { id: "5", title: "Preparar una comida", points: 35 },
+    ],
+  },
+  {
+    title: "Habitación",
+    data: [{ id: "6", title: "Doblar y guardar", points: 15 }],
+  },
+  {
+    title: "Salón",
+    data: [{ id: "7", title: "Quitar la mesa", points: 10 }],
+  },
+  {
+    title: "Baño",
+    data: [{ id: "8", title: "Recoger lavavajillas", points: 15 }],
+  },
+  {
+    title: "Pasillo",
+    data: [{ id: "9", title: "Barrido", points: 10 }],
+  },
+  {
+    title: "Terraza",
+    data: [{ id: "10", title: "Regar plantas", points: 20 }],
+  },
+];
+
+const detailedTasks = [
+  { id: "11", title: "Fregar los platos", points: 15 },
+  { id: "12", title: "Limpiar el refrigerador", points: 25 },
+  { id: "13", title: "Limpiar horno", points: 30 },
+  { id: "14", title: "Limpiar la mesa", points: 15 },
+  { id: "15", title: "Limpiar microondas", points: 20 },
+  { id: "16", title: "Limpiar muebles cocina", points: 25 },
+  { id: "17", title: "Limpiar nevera", points: 30 },
+];
+
+// Array de días para programar las tareas
+const daysOfWeek = [
   "Lunes",
   "Martes",
   "Miércoles",
@@ -25,24 +88,25 @@ const diasFirebase = [
   "Domingo",
 ];
 
-const avatarImages = [
-  require("../../assets/images/logo.png"),
-  require("../../assets/images/logo.png"),
-  require("../../assets/images/logo.png"),
-  require("../../assets/images/logo.png"),
-];
+export default function TaskSelectionScreen() {
+  // Datos de usuario para el header (reutilizando el estilo de HomeScreen)
+  const [avatarIndex, setAvatarIndex] = useState(null);
+  const [nombre, setNombre] = useState("");
+  // Datos para la selección de tareas (se utilizarán los arrays locales de simpleSections y detailedTasks)
+  const [tareas, setTareas] = useState([]); // Se mantiene esta variable en caso de que necesites la lista de "tareas" obtenidas de Firestore
+  // En este ejemplo se utiliza un array para almacenar los IDs de las tareas seleccionadas
+  const [tareasSeleccionadas, setTareasSeleccionadas] = useState([]);
 
-export default function TasksScreen() {
-  const [avatarIndex, setAvatarIndex] = useState<number | null>(null);
-  const [nombre, setNombre] = useState<string>("");
-  const [selectedDayIndex, setSelectedDayIndex] = useState<number>(0);
-  const [tareas, setTareas] = useState<any[]>([]);
-  const [tareasSeleccionadas, setTareasSeleccionadas] = useState<{
-    [key: string]: boolean;
-  }>({});
+  // Nuevos estados para el toggle entre modo "simple" y "detallado", mensaje de error y día seleccionado
+  const [mode, setMode] = useState("simple");
+  const [error, setError] = useState("");
+  const [selectedDayIndex, setSelectedDayIndex] = useState(0);
+
+  const router = useRouter();
 
   useEffect(() => {
-    const fetchUserAndGroup = async () => {
+    // Obtener datos del usuario para el header
+    const fetchUserData = async () => {
       const user = auth.currentUser;
       if (!user) return;
 
@@ -53,127 +117,267 @@ export default function TasksScreen() {
         const userData = userSnap.data();
         setNombre(userData.nombre ?? "");
         setAvatarIndex(userData.avatarIndex ?? null);
-
-        if (userData.grupoId) {
-          const grupoRef = doc(db, "grupos", userData.grupoId);
-          const grupoSnap = await getDoc(grupoRef);
-
-          if (grupoSnap.exists()) {
-            const grupoData = grupoSnap.data();
-            const dia = grupoData.inicioSemana;
-            const index = diasFirebase.findIndex((d) => d === dia);
-            if (index !== -1) setSelectedDayIndex(index);
-            setTareas(grupoData.tareas ?? []);
-          }
-        }
       }
     };
 
-    fetchUserAndGroup();
+    // Obtener la lista de tareas de Firestore (se mantiene sin modificar)
+    const fetchTareas = async () => {
+      try {
+        const snapshot = await getDocs(collection(db, "tareas"));
+        const listaTareas = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setTareas(listaTareas);
+      } catch (error) {
+        console.error("Error al obtener las tareas: ", error);
+      }
+    };
+
+    fetchUserData();
+    fetchTareas();
   }, []);
 
-  const handleTareaSeleccion = (tareaId: string) => {
-    setTareasSeleccionadas((prev) => ({
-      ...prev,
-      [tareaId]: !prev[tareaId],
-    }));
+  const showToast = (message) => {
+    if (Platform.OS === "android") {
+      ToastAndroid.show(message, ToastAndroid.SHORT);
+    } else {
+      Alert.alert("Whizzy", message);
+    }
   };
 
-  const nombreDiaFirebase = diasFirebase[selectedDayIndex];
-  const tareasFiltradas = tareas.filter((t) => t.dia === nombreDiaFirebase);
+  // Alternar la selección de una tarea (se almacena el ID de la tarea en un array)
+  const toggleTask = (id) => {
+    setTareasSeleccionadas((prev) =>
+      prev.includes(id) ? prev.filter((t) => t !== id) : [...prev, id]
+    );
+  };
+
+  // Acción al pulsar "Siguiente" para enviar las tareas seleccionadas
+  const handleSubmit = async () => {
+    if (tareasSeleccionadas.length === 0) {
+      setError("Selecciona al menos una tarea antes de continuar.");
+      return;
+    }
+
+    const user = auth.currentUser;
+    if (!user) return;
+
+    try {
+      const userRef = doc(db, "usuarios", user.uid);
+      const userSnap = await getDoc(userRef);
+      if (!userSnap.exists()) return;
+
+      const grupoId = userSnap.data().grupoId;
+      if (!grupoId) return;
+
+      const grupoRef = doc(db, "grupos", grupoId);
+      const grupoSnap = await getDoc(grupoRef);
+      if (!grupoSnap.exists()) return;
+
+      // Usar el día seleccionado en nuestro picker (por ejemplo, "Lunes")
+      const selectedDay = daysOfWeek[selectedDayIndex];
+
+      // Combinar ambas listas de tareas locales
+      const allTasks = [
+        ...simpleSections.flatMap((section) => section.data),
+        ...detailedTasks,
+      ];
+
+      // Filtrar las tareas seleccionadas y asignarles el día elegido
+      const selected = allTasks
+        .filter((task) => tareasSeleccionadas.includes(task.id))
+        .map((task) => ({ ...task, dia: selectedDay }));
+
+      await updateDoc(grupoRef, {
+        tareas: selected,
+      });
+
+      router.replace("/(tabs)/HomeScreen");
+    } catch (error) {
+      console.error("Error actualizando grupo con tareas:", error);
+    }
+  };
+
+  // Función para renderizar cada ítem en el modo simple (SectionList)
+  const renderSimpleTaskItem = ({ item }) => (
+    <TouchableOpacity
+      style={styles.taskItem}
+      onPress={() => toggleTask(item.id)}
+    >
+      <View style={styles.circle}>
+        {tareasSeleccionadas.includes(item.id) && (
+          <View style={styles.filledCircle} />
+        )}
+      </View>
+      <Text style={styles.taskText}>{item.title}</Text>
+      <View
+        style={[
+          styles.pointsContainer,
+          tareasSeleccionadas.includes(item.id) &&
+            styles.pointsContainerSelected,
+        ]}
+      >
+        <Text
+          style={[
+            styles.points,
+            tareasSeleccionadas.includes(item.id) && styles.pointsSelected,
+          ]}
+        >
+          {item.points} puntos
+        </Text>
+      </View>
+    </TouchableOpacity>
+  );
+
+  // Función para renderizar cada ítem en el modo detallado (FlatList)
+  const renderDetailedTaskItem = ({ item }) => (
+    <TouchableOpacity
+      style={styles.taskItem}
+      onPress={() => toggleTask(item.id)}
+    >
+      <View style={styles.circle}>
+        {tareasSeleccionadas.includes(item.id) && (
+          <View style={styles.filledCircle} />
+        )}
+      </View>
+      <Text style={styles.taskText}>{item.title}</Text>
+      <View
+        style={[
+          styles.pointsContainer,
+          tareasSeleccionadas.includes(item.id) &&
+            styles.pointsContainerSelected,
+        ]}
+      >
+        <Text
+          style={[
+            styles.points,
+            tareasSeleccionadas.includes(item.id) && styles.pointsSelected,
+          ]}
+        >
+          {item.points} puntos
+        </Text>
+      </View>
+    </TouchableOpacity>
+  );
 
   return (
     <SafeAreaView style={styles.container}>
-      
-        <View style={styles.header}>
-          <Text style={styles.welcomeText}>Hola</Text>
-          <Text style={styles.brandText}>{nombre} 👋</Text>
-          {avatarIndex !== null && (
+      {/* Header: igual que en HomeScreen */}
+      <View style={styles.header}>
+        <Text style={styles.welcomeText}>Hola</Text>
+        <Text style={styles.brandText}>{nombre} 👋</Text>
+        {avatarIndex !== null && (
+          <TouchableOpacity
+            style={styles.avatarTouch}
+            onPress={() => router.push("/screens/ProfileScreen")}
+          >
             <Image
               source={avatarImages[avatarIndex]}
               style={styles.avatarTopRight}
             />
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* Contenido principal */}
+
+      <ScrollView contentContainerStyle={styles.content}>
+        <View style={styles.card}>
+        <Text style={styles.title}>Lista de tareas </Text>
+
+        {/* Toggle de modo: Simple / Detallado */}
+        <View style={styles.tabContainer}>
+          <TouchableOpacity
+            style={[styles.tab, mode === "simple" && styles.tabSelected]}
+            onPress={() => setMode("simple")}
+          >
+            <Text
+              style={
+                mode === "simple" ? styles.tabTextSelected : styles.tabText
+              }
+            >
+              Simple
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tab, mode === "detailed" && styles.tabSelected]}
+            onPress={() => setMode("detailed")}
+          >
+            <Text
+              style={
+                mode === "detailed" ? styles.tabTextSelected : styles.tabText
+              }
+            >
+              Detallado
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Lista de Tareas */}
+        <View style={styles.taskList}>
+          {mode === "simple" ? (
+            <SectionList
+              sections={simpleSections}
+              keyExtractor={(item) => item.id}
+              stickySectionHeadersEnabled={false}
+              showsVerticalScrollIndicator={false}
+              scrollEnabled={false}
+              renderSectionHeader={({ section: { title } }) => (
+                <Text style={styles.sectionHeader}>{title}</Text>
+              )}
+              renderItem={renderSimpleTaskItem}
+            />
+          ) : (
+            <FlatList
+              data={detailedTasks}
+              keyExtractor={(item) => item.id}
+              showsVerticalScrollIndicator={false}
+              scrollEnabled={false}
+              renderItem={renderDetailedTaskItem}
+            />
           )}
         </View>
-        <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <View style={styles.card}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.calendarScroll}
-          >
-            <View style={styles.calendar}>
-              {diasSemana.map((dia, index) => (
-                <TouchableOpacity
-                  key={dia}
-                  style={[
-                    styles.dayItem,
-                    selectedDayIndex === index && styles.dayItemSelected,
-                  ]}
-                  onPress={() => setSelectedDayIndex(index)}
-                >
-                  <Text
-                    style={[
-                      styles.dayText,
-                      selectedDayIndex === index && { color: "#fff" },
-                    ]}
-                  >
-                    {dia}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </ScrollView>
 
-          <View style={styles.tareasContainer}>
-            {tareasFiltradas.length > 0 ? (
-              tareasFiltradas.map((tarea) => (
-                <TouchableOpacity
-                  key={tarea.id}
-                  style={styles.tareaItem}
-                  onPress={() => handleTareaSeleccion(tarea.id)}
-                >
-                  <View
-                    style={[
-                      styles.checkCircle,
-                      tareasSeleccionadas[tarea.id] && styles.checkedDone,
-                    ]}
-                  >
-                    {tareasSeleccionadas[tarea.id] && (
-                      <View style={styles.checkInner} />
-                    )}
-                  </View>
-                  <Text style={styles.tareaTexto}>{tarea.title}</Text>
-                </TouchableOpacity>
-              ))
-            ) : (
-              <Text style={{ color: "#aaa", fontStyle: "italic" }}>
-                No hay tareas para este día.
+        {/* Selección del día para programar las tareas */}
+        <Text style={styles.dayTitle}>
+          Selecciona un día para programar las tareas:
+        </Text>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.dayContainer}
+        >
+          {daysOfWeek.map((day, index) => (
+            <TouchableOpacity
+              key={day}
+              style={[
+                styles.dayItem,
+                selectedDayIndex === index && styles.dayItemSelected,
+              ]}
+              onPress={() => setSelectedDayIndex(index)}
+            >
+              <Text
+                style={
+                  selectedDayIndex === index
+                    ? styles.dayTextSelected
+                    : styles.dayText
+                }
+              >
+                {day}
               </Text>
-            )}
-          </View>
-
-          <Text style={styles.sectionTitle}>Semana Actual</Text>
-
-          <View style={styles.card2}>
-            <Image
-              source={require("../../assets/images/logo.png")}
-              style={styles.image}
-            />
-            <View style={styles.taskInfo}>
-              <Text style={styles.taskNumber}>5</Text>
-              <Text style={styles.taskLabel}>Quedan</Text>
-              <Text style={styles.taskNumber}>0</Text>
-              <Text style={styles.taskLabel}>Hechas</Text>
-              <Text style={styles.taskNumber}>0</Text>
-              <Text style={styles.taskLabel}>Retraso</Text>
-            </View>
-            <TouchableOpacity style={styles.button}>
-              <Text style={styles.buttonText}>Validar Tarea</Text>
             </TouchableOpacity>
-          </View>
+          ))}
+        </ScrollView>
+
+        {!!error && <Text style={styles.errorText}>{error}</Text>}
+
+        <TouchableOpacity style={styles.button} onPress={handleSubmit}>
+          <Text style={styles.buttonText}>Siguiente</Text>
+        </TouchableOpacity>
         </View>
       </ScrollView>
+      {/* El Tabbar se conserva si está definido en la estructura del router o en un layout global */}
     </SafeAreaView>
   );
 }
@@ -205,10 +409,12 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#1f618d",
   },
-  avatarTopRight: {
+  avatarTouch: {
     position: "absolute",
-    right: 0,
     top: 0,
+    right: 0,
+  },
+  avatarTopRight: {
     width: 75,
     height: 75,
     borderRadius: 25,
@@ -221,106 +427,125 @@ const styles = StyleSheet.create({
     borderColor: "#eee",
     paddingVertical: 20,
   },
-  calendarScroll: {
-    maxHeight: 60,
-    marginVertical: 10,
+  // Contenido
+  content: {
+    paddingHorizontal: 20,
+    paddingBottom: 100
   },
-  calendar: {
+  title: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: "#1f618d",
+    marginBottom: 10,
+    textAlign: "justify",
+  },
+  description: {
+    textAlign: "center",
+    fontSize: 16,
+    color: "#555",
+    marginBottom: 20,
+  },
+  tabContainer: {
     flexDirection: "row",
-    gap: width * 0.1,
+    backgroundColor: "#f2f2f2",
+    borderRadius: 10,
+    marginBottom: 15,
+  },
+  tab: { flex: 1, paddingVertical: 10, alignItems: "center", borderRadius: 10 },
+  tabSelected: { backgroundColor: "#fff" },
+  tabText: { color: "#888", fontWeight: "600" },
+  tabTextSelected: { color: "#1f618d", fontWeight: "bold" },
+  taskList: {
+    backgroundColor: "#f9f9f9",
+    borderRadius: 10,
+    marginBottom: 20,
+  },
+  sectionHeader: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#1f618d",
+    backgroundColor: "#f9f9f9",
+    paddingHorizontal: 15,
+    paddingTop: 10,
+  },
+  taskItem: {
+    flexDirection: "row",
     alignItems: "center",
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+  },
+  circle: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2,
+    borderColor: "#1f618d",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+  },
+  filledCircle: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: "#1f618d",
+  },
+  taskText: { flex: 1, fontSize: 16, color: "#333" },
+  pointsContainer: {
+    backgroundColor: "#ebf5fb",
+    borderRadius: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  pointsContainerSelected: { backgroundColor: "#1f618d" },
+  points: { fontSize: 14, fontWeight: "bold", color: "#1f618d" },
+  pointsSelected: { color: "#fff" },
+  dayTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: 10,
+    textAlign: "justify",
+  },
+  dayContainer: {
+    flexDirection: "row",
+    marginBottom: 20,
   },
   dayItem: {
-    width: 45,
-    height: 45,
-    borderRadius: 22.5,
-    backgroundColor: "#f0f0f0",
-    justifyContent: "center",
-    alignItems: "center",
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    backgroundColor: "#f2f2f2",
+    borderRadius: 10,
     marginRight: 10,
   },
   dayItemSelected: {
     backgroundColor: "#1f618d",
   },
   dayText: {
-    color: "#333",
+    color: "#888",
+    fontWeight: "600",
+  },
+  dayTextSelected: {
+    color: "#fff",
     fontWeight: "bold",
   },
-  tareasContainer: {
-    marginBottom: 20,
-  },
-  tareaItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginVertical: 5,
-  },
-  checkCircle: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: "#1f618d",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 10,
-  },
-  checkedDone: {
-    borderColor: "#1f618d",
-    backgroundColor: "#d6eaf8",
-  },
-  checkInner: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: "#1f618d",
-  },
-  tareaTexto: {
-    fontSize: 16,
-    color: "#333",
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: 10,
-  },
-  card2: {
-    backgroundColor: "#f9f9f9",
-    borderRadius: 10,
-    padding: 20,
-    alignItems: "center",
-  },
-  image: {
-    width: 200,
-    height: 120,
-    resizeMode: "contain",
-    marginBottom: 10,
-  },
-  taskInfo: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    width: "100%",
-    marginBottom: 10,
-  },
-  taskNumber: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#1f618d",
+  errorText: {
+    color: "red",
     textAlign: "center",
-  },
-  taskLabel: {
-    fontSize: 12,
-    color: "#999",
-    textAlign: "center",
+    marginBottom: 10,
   },
   button: {
-    backgroundColor: "#f7c948",
-    paddingVertical: 10,
-    paddingHorizontal: 20,
+    backgroundColor: "#1f618d",
+    paddingVertical: 12,
     borderRadius: 10,
+    alignItems: "center",
+    marginTop: 10,
   },
   buttonText: {
-    color: "#333",
+    color: "#fff",
     fontWeight: "bold",
+    fontSize: 16,
   },
 });

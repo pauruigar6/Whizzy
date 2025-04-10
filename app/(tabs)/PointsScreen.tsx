@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -9,21 +9,11 @@ import {
   ScrollView,
   Dimensions,
 } from "react-native";
+import { useRouter } from "expo-router";
 import { auth, db } from "@/firebase/firebaseConfig";
-import { getDoc, doc } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 
-const { width, height } = Dimensions.get("window");
-
-const diasSemana = ["Lu", "Ma", "Mi", "Ju", "Vi", "Sá", "Do"];
-const diasFirebase = [
-  "Lunes",
-  "Martes",
-  "Miércoles",
-  "Jueves",
-  "Viernes",
-  "Sábado",
-  "Domingo",
-];
+const { height } = Dimensions.get("window");
 
 const avatarImages = [
   require("../../assets/images/logo.png"),
@@ -32,147 +22,110 @@ const avatarImages = [
   require("../../assets/images/logo.png"),
 ];
 
+// Estado emocional según los puntos
+const getEstado = (puntos: number) => {
+  if (puntos >= 80) return { label: "Feliz", color: "#d4efdf" };
+  if (puntos >= 30) return { label: "Dudoso", color: "#fcf3cf" };
+  return { label: "Triste", color: "#f5b7b1" };
+};
+
 export default function PointsScreen() {
   const [avatarIndex, setAvatarIndex] = useState<number | null>(null);
-  const [nombre, setNombre] = useState<string>("");
-  const [selectedDayIndex, setSelectedDayIndex] = useState<number>(0);
-  const [tareas, setTareas] = useState<any[]>([]);
-  const [tareasSeleccionadas, setTareasSeleccionadas] = useState<{
-    [key: string]: boolean;
-  }>({});
+  const [nombre, setNombre] = useState("");
+  const [ranking, setRanking] = useState<any[]>([]);
+
+  const router = useRouter();
 
   useEffect(() => {
-    const fetchUserAndGroup = async () => {
+    const fetchData = async () => {
       const user = auth.currentUser;
       if (!user) return;
 
       const userRef = doc(db, "usuarios", user.uid);
       const userSnap = await getDoc(userRef);
+      if (!userSnap.exists()) return;
 
-      if (userSnap.exists()) {
-        const userData = userSnap.data();
-        setNombre(userData.nombre ?? "");
-        setAvatarIndex(userData.avatarIndex ?? null);
+      const userData = userSnap.data();
+      setNombre(userData.nombre ?? "");
+      setAvatarIndex(userData.avatarIndex ?? null);
 
-        if (userData.grupoId) {
-          const grupoRef = doc(db, "grupos", userData.grupoId);
-          const grupoSnap = await getDoc(grupoRef);
+      const grupoId = userData.grupoId;
+      if (!grupoId) return;
 
-          if (grupoSnap.exists()) {
-            const grupoData = grupoSnap.data();
-            const dia = grupoData.inicioSemana;
-            const index = diasFirebase.findIndex((d) => d === dia);
-            if (index !== -1) setSelectedDayIndex(index);
-            setTareas(grupoData.tareas ?? []);
-          }
-        }
+      const grupoRef = doc(db, "grupos", grupoId);
+      const grupoSnap = await getDoc(grupoRef);
+      if (!grupoSnap.exists()) return;
+
+      const grupoData = grupoSnap.data();
+      const miembros = grupoData.miembros || [];
+
+      const miembrosData: any[] = [];
+
+      for (const uid of miembros) {
+        const usuarioRef = doc(db, "usuarios", uid);
+        const usuarioSnap = await getDoc(usuarioRef);
+        if (!usuarioSnap.exists()) continue;
+
+        const usuario = usuarioSnap.data();
+        miembrosData.push({
+          uid,
+          nombre: usuario.nombre,
+          avatarIndex: usuario.avatarIndex ?? 0,
+          puntos: 0, // inicializamos en 0
+        });
       }
+
+      setRanking(miembrosData);
     };
 
-    fetchUserAndGroup();
+    fetchData();
   }, []);
-
-  const handleTareaSeleccion = (tareaId: string) => {
-    setTareasSeleccionadas((prev) => ({
-      ...prev,
-      [tareaId]: !prev[tareaId],
-    }));
-  };
-
-  const nombreDiaFirebase = diasFirebase[selectedDayIndex];
-  const tareasFiltradas = tareas.filter((t) => t.dia === nombreDiaFirebase);
 
   return (
     <SafeAreaView style={styles.container}>
-      
-        <View style={styles.header}>
-          <Text style={styles.welcomeText}>Hola</Text>
-          <Text style={styles.brandText}>{nombre} 👋</Text>
-          {avatarIndex !== null && (
+      <View style={styles.header}>
+        <Text style={styles.welcomeText}>Hola</Text>
+        <Text style={styles.brandText}>{nombre} 👋</Text>
+        {avatarIndex !== null && (
+          <TouchableOpacity
+            style={styles.avatarTouch}
+            onPress={() => router.push("/screens/ProfileScreen")}
+          >
             <Image
               source={avatarImages[avatarIndex]}
               style={styles.avatarTopRight}
             />
-          )}
-        </View>
-        <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <View style={styles.card}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.calendarScroll}
-          >
-            <View style={styles.calendar}>
-              {diasSemana.map((dia, index) => (
-                <TouchableOpacity
-                  key={dia}
-                  style={[
-                    styles.dayItem,
-                    selectedDayIndex === index && styles.dayItemSelected,
-                  ]}
-                  onPress={() => setSelectedDayIndex(index)}
-                >
-                  <Text
-                    style={[
-                      styles.dayText,
-                      selectedDayIndex === index && { color: "#fff" },
-                    ]}
-                  >
-                    {dia}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+          </TouchableOpacity>
+        )}
+      </View>
+
+      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: 100 }]}>
+        <Text style={styles.title}>Puntos de la semana</Text>
+
+        {ranking.map((miembro, index) => {
+          const estado = getEstado(miembro.puntos);
+          return (
+            <View
+              key={miembro.uid || index}
+              style={[styles.memberCard, { backgroundColor: estado.color }]}
+            >
+              <View style={styles.memberLeft}>
+                <Image
+                  source={avatarImages[miembro.avatarIndex]}
+                  style={styles.memberAvatar}
+                />
+                <View>
+                  <Text style={styles.estadoLabel}>{estado.label}</Text>
+                  <Text style={styles.nombre}>{miembro.nombre}</Text>
+                </View>
+              </View>
+              <View style={styles.puntos}>
+                <Text style={styles.puntosValor}>{miembro.puntos}</Text>
+                <Text style={styles.puntosLabel}>puntos</Text>
+              </View>
             </View>
-          </ScrollView>
-
-          <View style={styles.tareasContainer}>
-            {tareasFiltradas.length > 0 ? (
-              tareasFiltradas.map((tarea) => (
-                <TouchableOpacity
-                  key={tarea.id}
-                  style={styles.tareaItem}
-                  onPress={() => handleTareaSeleccion(tarea.id)}
-                >
-                  <View
-                    style={[
-                      styles.checkCircle,
-                      tareasSeleccionadas[tarea.id] && styles.checkedDone,
-                    ]}
-                  >
-                    {tareasSeleccionadas[tarea.id] && (
-                      <View style={styles.checkInner} />
-                    )}
-                  </View>
-                  <Text style={styles.tareaTexto}>{tarea.title}</Text>
-                </TouchableOpacity>
-              ))
-            ) : (
-              <Text style={{ color: "#aaa", fontStyle: "italic" }}>
-                No hay tareas para este día.
-              </Text>
-            )}
-          </View>
-
-          <Text style={styles.sectionTitle}>Semana Actual</Text>
-
-          <View style={styles.card2}>
-            <Image
-              source={require("../../assets/images/logo.png")}
-              style={styles.image}
-            />
-            <View style={styles.taskInfo}>
-              <Text style={styles.taskNumber}>5</Text>
-              <Text style={styles.taskLabel}>Quedan</Text>
-              <Text style={styles.taskNumber}>0</Text>
-              <Text style={styles.taskLabel}>Hechas</Text>
-              <Text style={styles.taskNumber}>0</Text>
-              <Text style={styles.taskLabel}>Retraso</Text>
-            </View>
-            <TouchableOpacity style={styles.button}>
-              <Text style={styles.buttonText}>Validar Tarea</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+          );
+        })}
       </ScrollView>
     </SafeAreaView>
   );
@@ -182,12 +135,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "white",
-  },
-  scrollContainer: {
-    paddingHorizontal: 20,
-    paddingBottom: 30,
-    minHeight: height,
-    justifyContent: "flex-start",
   },
   header: {
     paddingHorizontal: 20,
@@ -205,122 +152,69 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#1f618d",
   },
-  avatarTopRight: {
+  avatarTouch: {
     position: "absolute",
-    right: 0,
     top: 0,
+    right: 0,
+  },
+  avatarTopRight: {
     width: 75,
     height: 75,
     borderRadius: 25,
-    marginTop: 5,
-    marginRight: 5,
     resizeMode: "contain",
   },
-  card: {
-    borderTopWidth: 1,
-    borderColor: "#eee",
-    paddingVertical: 20,
+  content: {
+    paddingHorizontal: 20,
   },
-  calendarScroll: {
-    maxHeight: 60,
-    marginVertical: 10,
-  },
-  calendar: {
-    flexDirection: "row",
-    gap: width * 0.1,
-    alignItems: "center",
-  },
-  dayItem: {
-    width: 45,
-    height: 45,
-    borderRadius: 22.5,
-    backgroundColor: "#f0f0f0",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 10,
-  },
-  dayItemSelected: {
-    backgroundColor: "#1f618d",
-  },
-  dayText: {
-    color: "#333",
-    fontWeight: "bold",
-  },
-  tareasContainer: {
-    marginBottom: 20,
-  },
-  tareaItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginVertical: 5,
-  },
-  checkCircle: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: "#1f618d",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 10,
-  },
-  checkedDone: {
-    borderColor: "#1f618d",
-    backgroundColor: "#d6eaf8",
-  },
-  checkInner: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: "#1f618d",
-  },
-  tareaTexto: {
-    fontSize: 16,
-    color: "#333",
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: 10,
-  },
-  card2: {
-    backgroundColor: "#f9f9f9",
-    borderRadius: 10,
-    padding: 20,
-    alignItems: "center",
-  },
-  image: {
-    width: 200,
-    height: 120,
-    resizeMode: "contain",
-    marginBottom: 10,
-  },
-  taskInfo: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    width: "100%",
-    marginBottom: 10,
-  },
-  taskNumber: {
-    fontSize: 20,
+  title: {
+    fontSize: 22,
     fontWeight: "bold",
     color: "#1f618d",
-    textAlign: "center",
+    marginBottom: 20,
+    textAlign: "justify",
   },
-  taskLabel: {
-    fontSize: 12,
-    color: "#999",
-    textAlign: "center",
+  memberCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderRadius: 12,
+    padding: 15,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#eee",
   },
-  button: {
-    backgroundColor: "#f7c948",
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 10,
+  memberLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 15,
   },
-  buttonText: {
-    color: "#333",
+  memberAvatar: {
+    width: 55,
+    height: 55,
+    borderRadius: 27.5,
+    resizeMode: "contain",
+  },
+  estadoLabel: {
     fontWeight: "bold",
+    fontSize: 14,
+    marginBottom: 3,
+    color: "#333",
+  },
+  nombre: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#1f618d",
+  },
+  puntos: {
+    alignItems: "center",
+  },
+  puntosValor: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#1f618d",
+  },
+  puntosLabel: {
+    fontSize: 12,
+    color: "#666",
   },
 });
